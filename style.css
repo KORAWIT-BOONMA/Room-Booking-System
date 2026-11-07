@@ -1,1 +1,89 @@
 
+/* ==========================================
+   HYBRID RESERVE - CUSTOM STYLES
+========================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+/* Date and Time Input */
+input[type="date"],
+input[type="time"] {
+    color-scheme: dark;
+}
+
+/* Select */
+select {
+    cursor: pointer;
+}
+
+/* Buttons */
+button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #818cf8;
+    outline-offset: 2px;
+}
+
+/* Form Transition */
+input,
+select,
+button {
+    transition: all 0.2s ease;
+}
+
+/* Table */
+table {
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0f172a;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6366f1;
+}
+
+/* Selection */
+::selection {
+    background: #6366f1;
+    color: white;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    body {
+        font-size: 14px;
+    }
+}
+
