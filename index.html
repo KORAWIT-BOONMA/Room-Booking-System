@@ -1,485 +1,370 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hybrid Space Booking System</title>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome ไอคอน -->
+
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- JavaScript -->
+    <script src="script.js" defer></script>
 </head>
+
 <body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen">
 
-    <div class="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
-        
-        <!-- HEADER -->
-        <header class="bg-slate-800 p-6 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="text-center sm:text-left">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400 font-mono">
-                    <i class="fa-solid fa-hotel mr-2"></i>HYBRID RESERVE
-                </h1>
-                <p class="text-sm text-slate-400 mt-1">ระบบจองห้องพัก คอนโด และห้องประชุม รองรับการค้างคืนข้ามวัน ป้องกันจองซ้อน 100%</p>
-            </div>
-            
-            <!-- TABS NAVIGATION -->
-            <nav class="flex bg-slate-950 p-1 rounded-xl border border-slate-700/50">
-                <button onclick="switchTab('book')" id="btn-tab-book" class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition">
-                    <i class="fa-solid fa-key mr-1"></i> จองห้อง
-                </button>
-                <button onclick="switchTab('my-booking')" id="btn-tab-my-booking" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-magnifying-glass mr-1"></i> เช็คการจอง
-                </button>
-                <button onclick="switchTab('admin')" id="btn-tab-admin" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-lock mr-1"></i> แอดมิน
-                </button>
-            </nav>
-        </header>
+<div class="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
 
-        <!-- ================= TAB 1: BOOKING FORM ================= -->
-        <section id="tab-book" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- ซ้าย: ฟอร์มกรอกข้อมูล -->
-            <div class="md:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
-                <h2 class="text-xl font-bold text-indigo-400 flex items-center">
-                    <i class="fa-solid fa-pen-to-square mr-2"></i> กรอกข้อมูลการจอง
-                </h2>
-                
-                <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-4">
+    <!-- HEADER -->
+    <header class="bg-slate-800 p-6 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+
+        <div class="text-center sm:text-left">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400 font-mono">
+                <i class="fa-solid fa-hotel mr-2"></i>HYBRID RESERVE
+            </h1>
+
+            <p class="text-sm text-slate-400 mt-1">
+                ระบบจองห้องพัก คอนโด และห้องประชุม รองรับการค้างคืนข้ามวัน ป้องกันจองซ้อน
+            </p>
+        </div>
+
+        <!-- TABS -->
+        <nav class="flex bg-slate-950 p-1 rounded-xl border border-slate-700/50">
+
+            <button onclick="switchTab('book')" id="btn-tab-book"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition">
+                <i class="fa-solid fa-key mr-1"></i> จองห้อง
+            </button>
+
+            <button onclick="switchTab('my-booking')" id="btn-tab-my-booking"
+                class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-magnifying-glass mr-1"></i> เช็คการจอง
+            </button>
+
+            <button onclick="switchTab('admin')" id="btn-tab-admin"
+                class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-lock mr-1"></i> แอดมิน
+            </button>
+
+        </nav>
+    </header>
+
+    <!-- TAB 1: BOOKING -->
+    <section id="tab-book" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <div class="md:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+
+            <h2 class="text-xl font-bold text-indigo-400 flex items-center">
+                <i class="fa-solid fa-pen-to-square mr-2"></i>
+                กรอกข้อมูลการจอง
+            </h2>
+
+            <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-4">
+
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1" for="book-room">
+                        เลือกห้องที่ต้องการจอง
+                    </label>
+
+                    <select id="book-room"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none"
+                        required>
+                    </select>
+                </div>
+
+                <!-- CHECK-IN / CHECK-OUT -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-700/60">
+
+                    <div class="space-y-3">
+
+                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                            <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i>
+                            ข้อมูลการเข้าใช้ (Check-in)
+                        </span>
+
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" for="book-start-date">
+                                วันที่เช็คอิน
+                            </label>
+
+                            <input type="date" id="book-start-date"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                                required>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" for="book-start-time">
+                                เวลาเช็คอิน
+                            </label>
+
+                            <input type="time" id="book-start-time"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none"
+                                required>
+                        </div>
+
+                    </div>
+
+                    <div class="space-y-3 border-t sm:border-t-0 sm:border-l border-slate-700/60 pt-3 sm:pt-0 sm:pl-4">
+
+                        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                            <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>
+                            ข้อมูลสิ้นสุด (Check-out)
+                        </span>
+
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" for="book-end-date">
+                                วันที่เช็คเอาท์
+                            </label>
+
+                            <input type="date" id="book-end-date"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                                required>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" for="book-end-time">
+                                เวลาเช็คเอาท์
+                            </label>
+
+                            <input type="time" id="book-end-time"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none"
+                                required>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- USER INFORMATION -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">เลือกห้องที่ต้องการจอง</label>
-                        <select id="book-room" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none" required>
-                            <!-- ดึงจาก JS -->
+                        <label class="block text-sm text-slate-400 mb-1" for="book-name">
+                            ชื่อผู้จอง
+                        </label>
+
+                        <input type="text" id="book-name"
+                            placeholder="ชื่อ-นามสกุลของคุณ"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1" for="book-email">
+                            อีเมลผู้จอง (ใช้สำหรับค้นหา/ยกเลิก)
+                        </label>
+
+                        <input type="email" id="book-email"
+                            placeholder="example@email.com"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none"
+                            required>
+                    </div>
+
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-indigo-500 to-emerald-600 hover:from-indigo-600 hover:to-emerald-700 text-white font-bold p-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-500/20">
+
+                    <i class="fa-regular fa-circle-check mr-1"></i>
+                    ยืนยันการส่งข้อมูลจองห้อง
+
+                </button>
+
+            </form>
+        </div>
+
+        <!-- ROOM LIST -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+
+            <h3 class="text-lg font-bold text-slate-300">
+                <i class="fa-solid fa-layer-group mr-2 text-indigo-400"></i>
+                พื้นที่ทั้งหมดที่เปิดบริการ
+            </h3>
+
+            <div id="room-badge-list"
+                class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- TAB 2: MY BOOKING -->
+    <section id="tab-my-booking"
+        class="hidden bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-6">
+
+        <div class="max-w-md mx-auto text-center space-y-3">
+
+            <h2 class="text-xl font-bold text-indigo-400">
+                <i class="fa-solid fa-user-shield mr-2"></i>
+                ตรวจสอบสถานะการจองของคุณ
+            </h2>
+
+            <p class="text-xs text-slate-400">
+                กรอกอีเมลที่ใช้ตอนจองเพื่อตรวจสอบหรือยกเลิกรายการ
+            </p>
+
+            <div class="flex gap-2">
+
+                <input type="email" id="search-email"
+                    placeholder="ระบุอีเมลของคุณ..."
+                    class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
+
+                <button onclick="searchMyBookings()"
+                    class="bg-indigo-600 hover:bg-indigo-700 px-5 rounded-xl font-medium transition">
+                    ค้นหา
+                </button>
+
+            </div>
+        </div>
+
+        <div class="border-t border-slate-700/50 pt-4">
+
+            <h3 class="text-sm font-semibold text-slate-400 mb-3">
+                ผลการค้นหาข้อมูลการจอง:
+            </h3>
+
+            <div id="my-booking-results"
+                class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <p class="text-slate-500 text-sm text-center col-span-2 py-6">
+                    กรุณากรอกอีเมลเพื่อค้นหาประวัติข้อมูล...
+                </p>
+
+            </div>
+        </div>
+
+    </section>
+
+    <!-- TAB 3: ADMIN -->
+    <section id="tab-admin" class="hidden space-y-6">
+
+        <!-- ADMIN LOGIN -->
+        <div id="admin-gate"
+            class="max-w-sm mx-auto bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
+
+            <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+
+            <h2 class="text-lg font-bold">ยืนยันรหัสผ่านแอดมิน</h2>
+
+            <input type="password" id="admin-pass"
+                placeholder="รหัสผ่านแอดมิน"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-center text-white focus:border-indigo-500 focus:outline-none">
+
+            <button onclick="unlockAdmin()"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 font-semibold p-2.5 rounded-xl transition">
+                เข้าสู่แผงควบคุม
+            </button>
+
+        </div>
+
+        <!-- ADMIN CONTENT -->
+        <div id="admin-content"
+            class="hidden grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- ADD ROOM -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4 h-fit">
+
+                <h2 class="text-lg font-bold text-emerald-400">
+                    <i class="fa-solid fa-square-plus mr-2"></i>
+                    เพิ่มพื้นที่บริการใหม่
+                </h2>
+
+                <div class="space-y-3">
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1" for="new-room-type">
+                            ประเภทพื้นที่
+                        </label>
+
+                        <select id="new-room-type"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
+
+                            <option value="meeting">🏢 ห้องประชุม (Meeting Room)</option>
+                            <option value="residence">🛏️ คอนโด / ห้องพัก (Residence)</option>
+
                         </select>
                     </div>
 
-                    <!-- ปรับปรุงโครงสร้างวันเวลาให้รองรับ Check-in / Check-out แบบแยกวัน -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-700/60">
-                        <div class="space-y-3">
-                            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> ข้อมูลการเข้าใช้ (Check-in)</span>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">วันที่เช็คอิน</label>
-                                <input type="date" id="book-start-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none cursor-pointer" required>
-                            </div>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">เวลาเช็คอิน</label>
-                                <input type="time" id="book-start-time" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none" required>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-3 border-t sm:border-t-0 sm:border-l border-slate-700/60 pt-3 sm:pt-0 sm:pl-4">
-                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> ข้อมูลสิ้นสุด (Check-out)</span>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">วันที่เช็คเอาท์</label>
-                                <input type="date" id="book-end-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none cursor-pointer" required>
-                            </div>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">เวลาเช็คเอาท์</label>
-                                <input type="time" id="book-end-time" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none" required>
-                            </div>
-                        </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1" for="new-room-name">
+                            ชื่อห้อง / เลขห้อง
+                        </label>
+
+                        <input type="text" id="new-room-name"
+                            placeholder="เช่น Room 502 (Luxury Suite)"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-1">ชื่อผู้จอง</label>
-                            <input type="text" id="book-name" placeholder="ชื่อ-นามสกุลของคุณ" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-1">อีเมลผู้จอง (ใช้สำหรับค้นหา/ยกเลิก)</label>
-                            <input type="email" id="book-email" placeholder="example@email.com" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none" required>
-                        </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1" for="new-room-cap">
+                            ความจุ / จำนวนผู้เข้าพัก (คน)
+                        </label>
+
+                        <input type="number" id="new-room-cap"
+                            placeholder="เช่น 4" min="1"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
                     </div>
 
-                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-emerald-600 hover:from-indigo-600 hover:to-emerald-700 text-white font-bold p-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-500/20">
-                        <i class="fa-regular fa-circle-check mr-1"></i> ยืนยันการส่งข้อมูลจองห้อง
+                    <button onclick="addNewRoom()"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 font-bold p-2.5 rounded-xl transition">
+                        สร้างห้องบริการ
                     </button>
-                </form>
-            </div>
 
-            <!-- ขวา: รายชื่อห้องที่เปิดบริการอยู่ -->
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
-                <h3 class="text-lg font-bold text-slate-300"><i class="fa-solid fa-layer-group mr-2 text-indigo-400"></i>พื้นที่ทั้งหมดที่เปิดบริการ</h3>
-                <div id="room-badge-list" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-                    <!-- ดึงจาก JS -->
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 2: MY BOOKING ================= -->
-        <section id="tab-my-booking" class="hidden bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-6">
-            <div class="max-w-md mx-auto text-center space-y-3">
-                <h2 class="text-xl font-bold text-indigo-400"><i class="fa-solid fa-user-shield mr-2"></i>ตรวจสอบสถานะการจองของคุณ</h2>
-                <p class="text-xs text-slate-400">กรอกอีเมลที่ใช้ตอนจองเพื่อตรวจสอบหรือยกเลิกรายการ</p>
-                <div class="flex gap-2">
-                    <input type="email" id="search-email" placeholder="ระบุอีเมลของคุณ..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
-                    <button onclick="searchMyBookings()" class="bg-indigo-600 hover:bg-indigo-700 px-5 rounded-xl font-medium transition">ค้นหา</button>
                 </div>
             </div>
 
-            <div class="border-t border-slate-700/50 pt-4">
-                <h3 class="text-sm font-semibold text-slate-400 mb-3">ผลการค้นหาข้อมูลการจอง:</h3>
-                <div id="my-booking-results" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <p class="text-slate-500 text-sm text-center col-span-2 py-6">กรุณากรอกอีเมลเพื่อค้นหาประวัติข้อมูล...</p>
+            <!-- BOOKING TABLE -->
+            <div class="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+
+                <div class="flex justify-between items-center gap-3">
+
+                    <h2 class="text-lg font-bold text-indigo-400">
+                        <i class="fa-solid fa-globe mr-2"></i>
+                        รายการคำขอจองทั้งหมดในระบบ
+                    </h2>
+
+                    <button onclick="clearAllData()"
+                        class="text-xs text-red-400 hover:underline">
+                        <i class="fa-solid fa-trash-can mr-1"></i>
+                        ล้างฐานข้อมูล
+                    </button>
+
+                </div>
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full text-left text-sm">
+
+                        <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">ประเภท/ห้อง</th>
+                                <th class="p-3">วัน/เวลาที่จอง (เข้า - ออก)</th>
+                                <th class="p-3">ผู้จอง (อีเมล)</th>
+                                <th class="p-3 text-center">การจัดการ</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="admin-booking-table"
+                            class="divide-y divide-slate-700/50">
+                        </tbody>
+
+                    </table>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- ================= TAB 3: ADMIN PANEL ================= -->
-        <section id="tab-admin" class="hidden space-y-6">
-            <!-- ประตูรหัสผ่านแอดมิน -->
-            <div id="admin-gate" class="max-w-sm mx-auto bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
-                <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mx-auto text-xl">
-                    <i class="fa-solid fa-vault"></i>
-                </div>
-                <h2 class="text-lg font-bold">ยืนยันรหัสผ่านแอดมิน</h2>
-                <input type="password" id="admin-pass" placeholder="รหัสผ่านคือ: admin1234" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-center text-white focus:border-indigo-500 focus:outline-none">
-                <button onclick="unlockAdmin()" class="w-full bg-indigo-600 hover:bg-indigo-700 font-semibold p-2.5 rounded-xl transition">เข้าสู่แผงควบคุม</button>
-            </div>
+</div>
 
-            <!-- แผงควบคุมจริง -->
-            <div id="admin-content" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- ฝั่งซ้าย: เพิ่มห้องใหม่ -->
-                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4 h-fit">
-                    <h2 class="text-lg font-bold text-emerald-400"><i class="fa-solid fa-square-plus mr-2"></i>เพิ่มพื้นที่บริการใหม่</h2>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">ประเภทพื้นที่</label>
-                            <select id="new-room-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
-                                <option value="meeting">🏢 ห้องประชุม (Meeting Room)</option>
-                                <option value="residence">🛏️ คอนโด / ห้องพัก (Residence)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">ชื่อห้อง / เลขห้อง</label>
-                            <input type="text" id="new-room-name" placeholder="เช่น Room 502 (Luxury Suite)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">ความจุ / จำนวนผู้เข้าพัก (คน)</label>
-                            <input type="number" id="new-room-cap" placeholder="เช่น 4" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
-                        </div>
-                        <button onclick="addNewRoom()" class="w-full bg-emerald-600 hover:bg-emerald-700 font-bold p-2.5 rounded-xl transition">สร้างห้องบริการ</button>
-                    </div>
-                </div>
-
-                <!-- ฝั่งขวา: ตารางรายชื่อการจองทั้งหมด -->
-                <div class="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-lg font-bold text-indigo-400"><i class="fa-solid fa-globe mr-2"></i>รายการคำขอจองทั้งหมดในระบบ</h2>
-                        <button onclick="clearAllData()" class="text-xs text-red-400 hover:underline"><i class="fa-solid fa-trash-can mr-1"></i>ล้างฐานข้อมูลเริ่มต้นใหม่หมด</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">ประเภท/ห้อง</th>
-                                    <th class="p-3">วัน/เวลาที่จอง (เข้า - ออก)</th>
-                                    <th class="p-3">ผู้จอง (อีเมล)</th>
-                                    <th class="p-3 text-center">การจัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-booking-table" class="divide-y divide-slate-700/50">
-                                <!-- ดึงจาก JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </div>
-
-    <!-- 🧠 JAVASCRIPT LOGIC SYSTEM -->
-    <script>
-        let defaultRooms = [
-            { id: "h1", name: "Room A - Creative Lounge", capacity: 8, type: "meeting" },
-            { id: "h2", name: "Room B - Executive Chamber", capacity: 20, type: "meeting" },
-            { id: "n1", name: "Normal Room 101", capacity: 4, type: "residence" },
-            { id: "n2", name: "Normal Room 102", capacity: 4, type: "residence" },
-            { id: "n3", name: "Normal Room 103", capacity: 4, type: "residence" },
-            { id: "n4", name: "Normal Room 104", capacity: 4, type: "residence" },
-            { id: "n5", name: "Normal Room 105", capacity: 4, type: "residence" },
-            { id: "s1", name: "Suite Room 201 (Luxury)", capacity: 2, type: "residence" },
-            { id: "s2", name: "Suite Room 202 (Luxury)", capacity: 2, type: "residence" },
-            { id: "s3", name: "Suite Room 203 (Luxury)", capacity: 2, type: "residence" },
-            { id: "s4", name: "Suite Room 204 (Luxury)", capacity: 2, type: "residence" },
-            { id: "s5", name: "Suite Room 205 (Luxury)", capacity: 2, type: "residence" }
-        ];
-        
-        let rooms = JSON.parse(localStorage.getItem('h_rooms')) || defaultRooms;
-        let bookings = JSON.parse(localStorage.getItem('h_bookings')) || [];
-
-        function syncStorage() {
-            localStorage.setItem('h_rooms', JSON.stringify(rooms));
-            localStorage.setItem('h_bookings', JSON.stringify(bookings));
-        }
-
-        function switchTab(tab) {
-            ['tab-book', 'tab-my-booking', 'tab-admin'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-
-            ['book', 'my-booking', 'admin'].forEach(t => {
-                const btn = document.getElementById(`btn-tab-${t}`);
-                if(t === tab) {
-                    btn.className = "px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition";
-                } else {
-                    btn.className = "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition";
-                }
-            });
-        }
-
-        // ฟังก์ชันแปลงวันและเวลาให้กลายเป็นตัวเลข Timestamp (มิลลิวินาที) เพื่อเอามาเปรียบเทียบข้ามวันได้แม่นยำ
-        function convertToTimestamp(dateStr, timeStr) {
-            return new Date(`${dateStr}T${timeStr}`).getTime();
-        }
-
-        // ฟังก์ชันจัดฟอร์แมตวันที่ให้ละมุนตาขึ้นในการแสดงผล
-        function formatThaiDate(dateStr) {
-            const d = new Date(dateStr);
-            if (isNaN(d)) return dateStr;
-            return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-
-        // ตรวจสอบการจองซ้อนแบบข้ามคืน (Overnight Overlap Check)
-        function checkBookingConflict(roomId, startTimestamp, endTimestamp) {
-            const conflicts = bookings.filter(b => b.roomId === roomId);
-            for (let exist of conflicts) {
-                const existStart = convertToTimestamp(b.startDate || b.date, b.startTime);
-                const existEnd = convertToTimestamp(b.endDate || b.date, b.endTime);
-
-                // ถ้าเวลาทับซ้อนกันแม้แต่นาทีเดียว จะคืนค่าก้อนข้อมูลที่ชนทันที
-                if (startTimestamp < existEnd && endTimestamp > existStart) {
-                    return exist;
-                }
-            }
-            return null;
-        }
-
-        function handleBooking(e) {
-            e.preventDefault();
-            
-            const roomId = document.getElementById('book-room').value;
-            const startDate = document.getElementById('book-start-date').value;
-            const startTime = document.getElementById('book-start-time').value;
-            const endDate = document.getElementById('book-end-date').value;
-            const endTime = document.getElementById('book-end-time').value;
-            const userName = document.getElementById('book-name').value.trim();
-            const userEmail = document.getElementById('book-email').value.trim().toLowerCase();
-
-            const startTimestamp = convertToTimestamp(startDate, startTime);
-            const endTimestamp = convertToTimestamp(endDate, endTime);
-
-            if(startTimestamp >= endTimestamp) {
-                alert("❌ วันและเวลาสิ้นสุด (Check-out) จะต้องอยู่หลังจากวันเวลาที่เริ่มเข้าใช้เสมอนะครับ!");
-                return;
-            }
-
-            const conflictInfo = checkBookingConflict(roomId, startTimestamp, endTimestamp);
-            if(conflictInfo) {
-                const cStartD = conflictInfo.startDate || conflictInfo.date;
-                const cEndD = conflictInfo.endDate || conflictInfo.date;
-                alert(`🚨 ขออภัยครับ! ห้องนี้ในช่วงเวลาดังกล่าวถูกจองไว้แล้วโดยคุณ "${conflictInfo.userName}" \nตั้งแต่ (${formatThaiDate(cStartD)} เวลา ${conflictInfo.startTime} น.) \nถึง (${formatThaiDate(cEndD)} เวลา ${conflictInfo.endTime} น.) \nกรุณาเปลี่ยนวันเวลาหรือเลือกห้องอื่นแทนนะครับ`);
-                return;
-            }
-
-            const targetRoom = rooms.find(r => r.id === roomId);
-            const newBooking = {
-                id: 'bk_' + Date.now(),
-                roomId: roomId,
-                roomName: targetRoom.name,
-                roomType: targetRoom.type,
-                startDate: startDate,
-                startTime: startTime,
-                endDate: endDate,
-                endTime: endTime,
-                userName: userName,
-                userEmail: userEmail
-            };
-
-            bookings.push(newBooking);
-            syncStorage();
-            
-            alert(`🎉 สำเร็จ! ยืนยันการจองห้อง ${targetRoom.name} เรียบร้อยแล้วครับคุณ ${userName}`);
-            document.getElementById('booking-form').reset();
-            renderAdminTable();
-        }
-
-        function searchMyBookings() {
-            const email = document.getElementById('search-email').value.trim().toLowerCase();
-            const resultArea = document.getElementById('my-booking-results');
-            
-            if(!email) {
-                alert("กรุณาระบุอีเมลเพื่อค้นประวัติด้วยครับ");
-                return;
-            }
-
-            const myData = bookings.filter(b => b.userEmail === email);
-            resultArea.innerHTML = '';
-
-            if(myData.length === 0) {
-                resultArea.innerHTML = `<p class="text-slate-400 text-sm text-center col-span-2 py-6">❌ ไม่พบประวัติการจองภายใต้อีเมล: ${email}</p>`;
-                return;
-            }
-
-            myData.forEach(b => {
-                const sDate = b.startDate || b.date;
-                const eDate = b.endDate || b.date;
-                
-                const typeText = b.roomType === 'meeting' ? '🏢 ห้องประชุม' : '🛏️ ห้องพัก/คอนโด';
-                const typeStyle = b.roomType === 'meeting' ? 'text-indigo-400' : 'text-emerald-400';
-
-                const card = `
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-700 flex justify-between items-center font-mono">
-                        <div class="space-y-1">
-                            <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-800 ${typeStyle}">${typeText}</span>
-                            <h4 class="text-sm font-bold text-slate-200 mt-1">${b.roomName}</h4>
-                            <p class="text-xs text-slate-300">🛫 เข้า: ${formatThaiDate(sDate)} (${b.startTime} น.)</p>
-                            <p class="text-xs text-slate-400">🛬 ออก: ${formatThaiDate(eDate)} (${b.endTime} น.)</p>
-                        </div>
-                        <button onclick="cancelBooking('${b.id}')" class="bg-red-950 hover:bg-red-900 border border-red-700 text-red-200 text-xs py-1.5 px-3 rounded-lg transition h-fit">
-                            <i class="fa-regular fa-trash-can mr-1"></i> ยกเลิก
-                        </button>
-                    </div>
-                `;
-                resultArea.insertAdjacentHTML('beforeend', card);
-            });
-        }
-
-        function cancelBooking(bookingId) {
-            if(confirm("คุณแน่ใจใช่ไหมที่จะยกเลิกรายการจองนี้?")) {
-                bookings = bookings.filter(b => b.id !== bookingId);
-                syncStorage();
-                alert("ยกเลิกการจองสำเร็จแล้ว");
-                searchMyBookings();
-                renderAdminTable();
-            }
-        }
-
-        function unlockAdmin() {
-            const pass = document.getElementById('admin-pass').value;
-            if(pass === 'admin1234') {
-                document.getElementById('admin-gate').classList.add('hidden');
-                document.getElementById('admin-content').classList.remove('hidden');
-                renderAdminTable();
-            } else {
-                alert("❌ รหัสผ่านไม่ถูกต้อง! (สำหรับทดสอบ: admin1234)");
-            }
-        }
-
-        function addNewRoom() {
-            const type = document.getElementById('new-room-type').value;
-            const name = document.getElementById('new-room-name').value.trim();
-            const cap = document.getElementById('new-room-cap').value;
-
-            if(!name || !cap) {
-                alert("กรุณากรอกข้อมูลให้ครบถ้วนครับ");
-                return;
-            }
-
-            const newRoom = {
-                id: 'rm_' + Date.now(),
-                name: name,
-                capacity: parseInt(cap),
-                type: type
-            };
-
-            rooms.push(newRoom);
-            syncStorage();
-            
-            alert(`สร้างพื้นที่ "${name}" สำเร็จเรียบร้อย!`);
-            document.getElementById('new-room-name').value = '';
-            document.getElementById('new-room-cap').value = '';
-            
-            initRoomUI(); 
-        }
-
-        function deleteBookingByAdmin(id) {
-            if(confirm("ผู้ดูแลระบบยืนยันสิทธิ์ในการลบการจองแมตช์นี้หรือไม่?")) {
-                bookings = bookings.filter(b => b.id !== id);
-                syncStorage();
-                renderAdminTable();
-            }
-        }
-
-        function clearAllData() {
-            if(confirm("⚠️ คุณต้องการล้างฐานข้อมูลทั้งหมดกลับสู่ค่าเริ่มต้นเพื่ออัปเดตระบบข้ามวันใช่หรือไม่?")) {
-                localStorage.clear();
-                rooms = defaultRooms;
-                bookings = [];
-                syncStorage();
-                location.reload();
-            }
-        }
-
-        function initRoomUI() {
-            const selectEl = document.getElementById('book-room');
-            const badgeEl = document.getElementById('room-badge-list');
-            
-            selectEl.innerHTML = '';
-            badgeEl.innerHTML = '';
-
-            rooms.forEach(r => {
-                const typeLabel = r.type === 'meeting' ? 'ห้องประชุม' : 'ที่พัก';
-                selectEl.innerHTML += `<option value="${r.id}">[${typeLabel}] ${r.name} (สูงสุด ${r.capacity} คน)</option>`;
-                
-                const isMeeting = r.type === 'meeting';
-                const badgeColor = isMeeting ? 'border-indigo-500/30 bg-slate-950' : 'border-emerald-500/30 bg-slate-950';
-                const icon = isMeeting ? 'fa-briefcase text-indigo-400' : 'fa-bed text-emerald-400';
-                const pillStyle = isMeeting ? 'bg-indigo-950 text-indigo-300 border-indigo-800/40' : 'bg-emerald-950 text-emerald-300 border-emerald-800/40';
-
-                badgeEl.innerHTML += `
-                    <div class="p-3 rounded-xl border ${badgeColor} flex items-center justify-between text-sm shadow-sm">
-                        <div class="flex items-center space-x-2.5">
-                            <i class="fa-solid ${icon} text-base"></i>
-                            <span class="font-medium text-slate-200">${r.name}</span>
-                        </div>
-                        <span class="text-[11px] px-2 py-0.5 rounded border ${pillStyle} font-mono"><i class="fa-solid fa-users mr-1"></i>${r.capacity} คน</span>
-                    </div>
-                `;
-            });
-        }
-
-        function renderAdminTable() {
-            const tbody = document.getElementById('admin-booking-table');
-            tbody.innerHTML = '';
-
-            if(bookings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-500 text-sm">📭 ยังไม่มีข้อมูลการจองในระบบขณะนี้...</td></tr>`;
-                return;
-            }
-
-            bookings.forEach(b => {
-                const typeBadge = b.roomType === 'meeting' 
-                    ? '<span class="text-[10px] bg-indigo-950 text-indigo-400 border border-indigo-800/30 px-1.5 py-0.5 rounded mr-1">ประชุม</span>' 
-                    : '<span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/30 px-1.5 py-0.5 rounded mr-1">ที่พัก</span>';
-
-                const sDate = b.startDate || b.date;
-                const eDate = b.endDate || b.date;
-
-                const row = `
-                    <tr class="hover:bg-slate-700/30 transition text-slate-300 font-mono">
-                        <td class="p-3 text-sm font-sans text-slate-200">
-                            <div class="flex items-center">${typeBadge} <span>${b.roomName}</span></div>
-                        </td>
-                        <td class="p-3 text-xs space-y-1">
-                            <span class="block text-slate-400">🛫 เข้า: <b class="text-slate-200">${sDate}</b> เวลา <b class="text-indigo-400">${b.startTime} น.</b></span>
-                            <span class="block text-slate-400">🛬 ออก: <b class="text-slate-200">${eDate}</b> เวลา <b class="text-emerald-400">${b.endTime} น.</b></span>
-                        </td>
-                        <td class="p-3 text-xs">
-                            <span class="block text-slate-100 font-sans font-semibold">${b.userName}</span>
-                            <span class="text-slate-400">${b.userEmail}</span>
-                        </td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteBookingByAdmin('${b.id}')" class="text-red-400 hover:text-red-300 text-sm p-1">
-                                <i class="fa-solid fa-trash-can"></i> ลบ
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tbody.insertAdjacentHTML('beforeend', row);
-            });
-        }
-
-        initRoomUI();
-    </script>
 </body>
 </html>
