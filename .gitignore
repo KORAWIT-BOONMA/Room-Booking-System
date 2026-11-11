@@ -1,0 +1,21 @@
+﻿# Environment variables and secrets
+.env
+.env.*
+
+# Node dependencies
+node_modules/
+
+# SQLite databases
+backend/data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Database backups
+backend/backups/
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,21 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hybrid Space Booking System</title>
+    <title>HYBRID RESERVE - Room Booking System</title>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
-
-    <!-- JavaScript -->
     <script src="script.js" defer></script>
 </head>
 
@@ -27,39 +23,57 @@
     <header class="bg-slate-800 p-6 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
 
         <div class="text-center sm:text-left">
+
             <h1 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400 font-mono">
-                <i class="fa-solid fa-hotel mr-2"></i>HYBRID RESERVE
+                <i class="fa-solid fa-hotel mr-2"></i>
+                HYBRID RESERVE
             </h1>
 
             <p class="text-sm text-slate-400 mt-1">
-                ระบบจองห้องพัก คอนโด และห้องประชุม รองรับการค้างคืนข้ามวัน ป้องกันจองซ้อน
+                ระบบจองห้องพัก คอนโด และห้องประชุม รองรับการจองข้ามวันและป้องกันการจองซ้อน
             </p>
+
         </div>
 
         <!-- TABS -->
         <nav class="flex bg-slate-950 p-1 rounded-xl border border-slate-700/50">
 
-            <button onclick="switchTab('book')" id="btn-tab-book"
+            <button type="button"
+                onclick="switchTab('book')"
+                id="btn-tab-book"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition">
-                <i class="fa-solid fa-key mr-1"></i> จองห้อง
+                <i class="fa-solid fa-key mr-1"></i>
+                จองห้อง
             </button>
 
-            <button onclick="switchTab('my-booking')" id="btn-tab-my-booking"
+            <button type="button"
+                onclick="switchTab('my-booking')"
+                id="btn-tab-my-booking"
                 class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition">
-                <i class="fa-solid fa-magnifying-glass mr-1"></i> เช็คการจอง
+                <i class="fa-solid fa-magnifying-glass mr-1"></i>
+                เช็คการจอง
             </button>
 
-            <button onclick="switchTab('admin')" id="btn-tab-admin"
+            <button type="button"
+                onclick="switchTab('admin')"
+                id="btn-tab-admin"
                 class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition">
-                <i class="fa-solid fa-lock mr-1"></i> แอดมิน
+                <i class="fa-solid fa-lock mr-1"></i>
+                แอดมิน
             </button>
 
         </nav>
+
     </header>
 
+
+    <!-- ====================================== -->
     <!-- TAB 1: BOOKING -->
+    <!-- ====================================== -->
+
     <section id="tab-book" class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
+        <!-- BOOKING FORM -->
         <div class="md:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
 
             <h2 class="text-xl font-bold text-indigo-400 flex items-center">
@@ -67,9 +81,12 @@
                 กรอกข้อมูลการจอง
             </h2>
 
-            <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-4">
+            <form id="booking-form"
+                onsubmit="handleBooking(event)"
+                class="space-y-4">
 
                 <div>
+
                     <label class="block text-sm text-slate-400 mb-1" for="book-room">
                         เลือกห้องที่ต้องการจอง
                     </label>
@@ -78,6 +95,7 @@
                         class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none"
                         required>
                     </select>
+
                 </div>
 
                 <!-- CHECK-IN / CHECK-OUT -->
@@ -91,23 +109,29 @@
                         </span>
 
                         <div>
+
                             <label class="block text-xs text-slate-400 mb-1" for="book-start-date">
                                 วันที่เช็คอิน
                             </label>
 
-                            <input type="date" id="book-start-date"
+                            <input type="date"
+                                id="book-start-date"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
                                 required>
+
                         </div>
 
                         <div>
+
                             <label class="block text-xs text-slate-400 mb-1" for="book-start-time">
                                 เวลาเช็คอิน
                             </label>
 
-                            <input type="time" id="book-start-time"
+                            <input type="time"
+                                id="book-start-time"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none"
                                 required>
+
                         </div>
 
                     </div>
@@ -120,51 +144,64 @@
                         </span>
 
                         <div>
+
                             <label class="block text-xs text-slate-400 mb-1" for="book-end-date">
                                 วันที่เช็คเอาท์
                             </label>
 
-                            <input type="date" id="book-end-date"
+                            <input type="date"
+                                id="book-end-date"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
                                 required>
+
                         </div>
 
                         <div>
+
                             <label class="block text-xs text-slate-400 mb-1" for="book-end-time">
                                 เวลาเช็คเอาท์
                             </label>
 
-                            <input type="time" id="book-end-time"
+                            <input type="time"
+                                id="book-end-time"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:border-indigo-500 focus:outline-none"
                                 required>
+
                         </div>
 
                     </div>
+
                 </div>
 
-                <!-- USER INFORMATION -->
+                <!-- CUSTOMER INFORMATION -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     <div>
+
                         <label class="block text-sm text-slate-400 mb-1" for="book-name">
                             ชื่อผู้จอง
                         </label>
 
-                        <input type="text" id="book-name"
+                        <input type="text"
+                            id="book-name"
                             placeholder="ชื่อ-นามสกุลของคุณ"
                             class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none"
                             required>
+
                     </div>
 
                     <div>
+
                         <label class="block text-sm text-slate-400 mb-1" for="book-email">
-                            อีเมลผู้จอง (ใช้สำหรับค้นหา/ยกเลิก)
+                            อีเมลผู้จอง
                         </label>
 
-                        <input type="email" id="book-email"
+                        <input type="email"
+                            id="book-email"
                             placeholder="example@email.com"
                             class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none"
                             required>
+
                     </div>
 
                 </div>
@@ -178,9 +215,10 @@
                 </button>
 
             </form>
+
         </div>
 
-        <!-- ROOM LIST -->
+        <!-- ACTIVE ROOM LIST -->
         <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
 
             <h3 class="text-lg font-bold text-slate-300">
@@ -196,11 +234,15 @@
 
     </section>
 
+
+    <!-- ====================================== -->
     <!-- TAB 2: MY BOOKING -->
+    <!-- ====================================== -->
+
     <section id="tab-my-booking"
         class="hidden bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-6">
 
-        <div class="max-w-md mx-auto text-center space-y-3">
+        <div class="max-w-2xl mx-auto text-center space-y-3">
 
             <h2 class="text-xl font-bold text-indigo-400">
                 <i class="fa-solid fa-user-shield mr-2"></i>
@@ -208,21 +250,30 @@
             </h2>
 
             <p class="text-xs text-slate-400">
-                กรอกอีเมลที่ใช้ตอนจองเพื่อตรวจสอบหรือยกเลิกรายการ
+                กรอกอีเมลและ Booking Code ที่ได้รับหลังจากจองห้อง
+                เพื่อตรวจสอบสถานะการจอง
             </p>
 
-            <div class="flex gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
 
-                <input type="email" id="search-email"
-                    placeholder="ระบุอีเมลของคุณ..."
+                <input type="email"
+                    id="search-email"
+                    placeholder="อีเมลที่ใช้จอง"
                     class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
 
-                <button onclick="searchMyBookings()"
-                    class="bg-indigo-600 hover:bg-indigo-700 px-5 rounded-xl font-medium transition">
+                <input type="text"
+                    id="search-booking-code"
+                    placeholder="Booking Code"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
+
+                <button type="button"
+                    onclick="searchMyBookings()"
+                    class="bg-indigo-600 hover:bg-indigo-700 px-5 py-3 rounded-xl font-medium transition">
                     ค้นหา
                 </button>
 
             </div>
+
         </div>
 
         <div class="border-t border-slate-700/50 pt-4">
@@ -235,15 +286,20 @@
                 class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <p class="text-slate-500 text-sm text-center col-span-2 py-6">
-                    กรุณากรอกอีเมลเพื่อค้นหาประวัติข้อมูล...
+                    กรุณากรอกอีเมลและ Booking Code เพื่อค้นหาประวัติ
                 </p>
 
             </div>
+
         </div>
 
     </section>
 
+
+    <!-- ====================================== -->
     <!-- TAB 3: ADMIN -->
+    <!-- ====================================== -->
+
     <section id="tab-admin" class="hidden space-y-6">
 
         <!-- ADMIN LOGIN -->
@@ -254,22 +310,342 @@
                 <i class="fa-solid fa-vault"></i>
             </div>
 
-            <h2 class="text-lg font-bold">ยืนยันรหัสผ่านแอดมิน</h2>
+            <h2 class="text-lg font-bold">
+                เข้าสู่ระบบแอดมิน
+            </h2>
 
-            <input type="password" id="admin-pass"
-                placeholder="รหัสผ่านแอดมิน"
+            <input type="text"
+                id="admin-username"
+                placeholder="Username"
+                autocomplete="username"
                 class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-center text-white focus:border-indigo-500 focus:outline-none">
 
-            <button onclick="unlockAdmin()"
+            <input type="password"
+                id="admin-pass"
+                placeholder="Password"
+                autocomplete="current-password"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-center text-white focus:border-indigo-500 focus:outline-none">
+
+            <button type="button"
+                id="admin-login-button"
+                onclick="unlockAdmin()"
                 class="w-full bg-indigo-600 hover:bg-indigo-700 font-semibold p-2.5 rounded-xl transition">
                 เข้าสู่แผงควบคุม
             </button>
 
         </div>
 
+
         <!-- ADMIN CONTENT -->
         <div id="admin-content"
             class="hidden grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- ADMIN TOP BAR / LOGOUT -->
+            <div class="lg:col-span-3 bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+
+                <div>
+                    <p class="text-xs text-slate-400">
+                        ADMIN SESSION
+                    </p>
+
+                    <p id="admin-session-name"
+                        class="text-sm font-bold text-indigo-400">
+                        ผู้ดูแลระบบ
+                    </p>
+                </div>
+
+                <button type="button"
+                    onclick="logoutAdmin()"
+                    class="bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 text-sm font-semibold px-4 py-2 rounded-lg transition">
+
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i>
+                    ออกจากระบบ
+
+                </button>
+
+            </div>
+
+
+            <!-- ====================================== -->
+            <!-- ADMIN SECURITY: PASSWORD + DATABASE BACKUP -->
+            <!-- ====================================== -->
+
+            <section id="admin-security"
+                class="lg:col-span-3 grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                <!-- CHANGE ADMIN PASSWORD -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-amber-500/20 shadow-lg space-y-4">
+
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-400">
+                            <i class="fa-solid fa-shield-halved mr-2"></i>
+                            ความปลอดภัยบัญชีแอดมิน
+                        </h2>
+
+                        <p class="text-xs text-slate-400 mt-1">
+                            เปลี่ยนรหัสผ่านสำหรับบัญชีผู้ดูแลระบบ
+                        </p>
+                    </div>
+
+                    <form id="admin-password-form"
+                        onsubmit="changeAdminPassword(event)"
+                        class="space-y-3">
+
+                        <div>
+                            <label for="admin-current-password"
+                                class="block text-xs text-slate-400 mb-1.5">
+                                รหัสผ่านปัจจุบัน
+                            </label>
+
+                            <input type="password"
+                                id="admin-current-password"
+                                name="currentPassword"
+                                autocomplete="current-password"
+                                placeholder="กรอกรหัสผ่านปัจจุบัน"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-amber-500 focus:outline-none"
+                                required>
+                        </div>
+
+                        <div>
+                            <label for="admin-new-password"
+                                class="block text-xs text-slate-400 mb-1.5">
+                                รหัสผ่านใหม่
+                            </label>
+
+                            <input type="password"
+                                id="admin-new-password"
+                                name="newPassword"
+                                autocomplete="new-password"
+                                minlength="12"
+                                placeholder="รหัสผ่านใหม่อย่างน้อย 12 ตัวอักษร"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-amber-500 focus:outline-none"
+                                required>
+
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                ควรใช้รหัสผ่านที่คาดเดายาก และไม่ใช้ซ้ำกับเว็บไซต์อื่น
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="admin-confirm-password"
+                                class="block text-xs text-slate-400 mb-1.5">
+                                ยืนยันรหัสผ่านใหม่
+                            </label>
+
+                            <input type="password"
+                                id="admin-confirm-password"
+                                name="confirmPassword"
+                                autocomplete="new-password"
+                                minlength="12"
+                                placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-amber-500 focus:outline-none"
+                                required>
+                        </div>
+
+                        <button type="submit"
+                            id="change-admin-password-btn"
+                            class="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold p-3 rounded-xl transition">
+
+                            <i class="fa-solid fa-key mr-2"></i>
+                            เปลี่ยนรหัสผ่าน
+
+                        </button>
+
+                        <p class="text-[11px] text-slate-500 text-center">
+                            หลังเปลี่ยนรหัสผ่านสำเร็จ ระบบจะให้ออกจากระบบและเข้าสู่ระบบใหม่
+                        </p>
+
+                    </form>
+
+                </div>
+
+
+                <!-- DATABASE BACKUP -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-emerald-500/20 shadow-lg space-y-4">
+
+                    <div>
+                        <h2 class="text-lg font-bold text-emerald-400">
+                            <i class="fa-solid fa-database mr-2"></i>
+                            สำรองฐานข้อมูล
+                        </h2>
+
+                        <p class="text-xs text-slate-400 mt-1">
+                            สร้างไฟล์สำรองฐานข้อมูล SQLite ของระบบ
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-950/70 border border-slate-700 rounded-xl p-4 space-y-2">
+
+                        <div class="flex items-center gap-2 text-sm text-emerald-400">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span class="font-semibold">ข้อมูลการสำรอง</span>
+                        </div>
+
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            ระบบจะสร้างไฟล์สำรองฐานข้อมูลไว้บนเซิร์ฟเวอร์
+                            โดยสามารถตรวจสอบและดาวน์โหลดไฟล์สำรองได้จากรายการด้านล่าง
+                        </p>
+
+                    </div>
+
+                    <button type="button"
+                        id="create-database-backup-btn"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-wait text-white font-bold p-3 rounded-xl transition">
+
+                        <i class="fa-solid fa-cloud-arrow-down mr-2"></i>
+                        สำรองฐานข้อมูลตอนนี้
+
+                    </button>
+
+                    <p id="database-backup-status"
+                        class="text-xs text-slate-400 min-h-5"
+                        aria-live="polite">
+                        พร้อมสำหรับการสำรองข้อมูล
+                    </p>
+
+                    <div class="border-t border-slate-700 pt-4 space-y-3">
+
+                        <div class="flex justify-between items-center gap-2">
+
+                            <h3 class="text-sm font-semibold text-slate-200">
+                                <i class="fa-solid fa-folder-open mr-2 text-emerald-400"></i>
+                                รายการไฟล์สำรอง
+                            </h3>
+
+                            <span class="text-[10px] text-slate-500">
+                                Database Backups
+                            </span>
+
+                        </div>
+
+                        <div id="admin-backup-list"
+                            class="space-y-2 max-h-52 overflow-y-auto pr-1">
+
+                            <p class="text-xs text-slate-500 text-center py-4">
+                                กำลังโหลดรายการไฟล์สำรอง...
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADMIN DASHBOARD -->
+            <section id="admin-dashboard"
+                class="lg:col-span-3 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-5">
+
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-indigo-400">
+                            <i class="fa-solid fa-chart-line mr-2"></i>
+                            ภาพรวมระบบ (Dashboard)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            สรุปข้อมูลห้องและการจองจากฐานข้อมูลล่าสุด
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:items-end gap-1">
+                        <button type="button"
+                            id="refresh-dashboard-btn"
+                            onclick="loadAdminDashboard()"
+                            class="text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait px-4 py-2 rounded-lg transition">
+                            <i class="fa-solid fa-rotate mr-1"></i>
+                            รีเฟรช Dashboard
+                        </button>
+                        <span id="dashboard-refresh-status"
+                            class="text-[11px] text-slate-500"
+                            aria-live="polite">
+                            รอโหลดข้อมูล...
+                        </span>
+                    </div>
+                </div>
+
+                <!-- SUMMARY CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+
+                    <article class="bg-slate-950 border border-indigo-500/20 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span>ห้องทั้งหมด</span>
+                            <i class="fa-solid fa-building text-indigo-400 text-base"></i>
+                        </div>
+                        <p id="dashboard-room-total" class="text-3xl font-extrabold text-white">—</p>
+                        <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                            <span class="text-emerald-400">เปิดใช้ <b id="dashboard-room-active">—</b></span>
+                            <span class="text-red-400">ปิดใช้ <b id="dashboard-room-inactive">—</b></span>
+                        </div>
+                    </article>
+
+                    <article class="bg-slate-950 border border-emerald-500/20 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span>การจองทั้งหมด</span>
+                            <i class="fa-solid fa-calendar-check text-emerald-400 text-base"></i>
+                        </div>
+                        <p id="dashboard-booking-total" class="text-3xl font-extrabold text-white">—</p>
+                        <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                            <span class="text-emerald-400">ยืนยัน <b id="dashboard-booking-confirmed">—</b></span>
+                            <span class="text-red-400">ยกเลิก <b id="dashboard-booking-cancelled">—</b></span>
+                        </div>
+                    </article>
+
+                    <article class="bg-slate-950 border border-sky-500/20 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span>รายการที่สร้างวันนี้</span>
+                            <i class="fa-solid fa-file-circle-plus text-sky-400 text-base"></i>
+                        </div>
+                        <p id="dashboard-created-today" class="text-3xl font-extrabold text-white">—</p>
+                        <p class="text-[11px] text-slate-500">อ้างอิงวันที่สร้างรายการ</p>
+                    </article>
+
+                    <article class="bg-slate-950 border border-amber-500/20 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span>รายการเริ่มวันนี้</span>
+                            <i class="fa-solid fa-calendar-day text-amber-400 text-base"></i>
+                        </div>
+                        <p id="dashboard-scheduled-today" class="text-3xl font-extrabold text-white">—</p>
+                        <p class="text-[11px] text-slate-500">อ้างอิงวันเริ่มต้นการจอง</p>
+                    </article>
+
+                </div>
+
+                <!-- RECENT BOOKINGS -->
+                <div class="space-y-3">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-1">
+                        <h3 class="text-sm font-bold text-slate-200">
+                            <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-400"></i>
+                            รายการจองล่าสุด
+                        </h3>
+                        <span class="text-[11px] text-slate-500">แสดง 5 รายการล่าสุด</span>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-700/70">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-950 text-slate-400 text-xs">
+                                <tr>
+                                    <th class="p-3">Booking / ห้อง</th>
+                                    <th class="p-3">ผู้จอง</th>
+                                    <th class="p-3">วันเริ่มใช้งาน</th>
+                                    <th class="p-3 text-center">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-dashboard-recent"
+                                class="divide-y divide-slate-700/50">
+                                <tr>
+                                    <td colspan="4" class="text-center p-5 text-slate-500 text-xs">
+                                        กำลังโหลดข้อมูล Dashboard...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
 
             <!-- ADD ROOM -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4 h-fit">
@@ -300,7 +676,9 @@
                             ชื่อห้อง / เลขห้อง
                         </label>
 
-                        <input type="text" id="new-room-name"
+                        <input type="text"
+                            id="new-room-name"
+                            maxlength="120"
                             placeholder="เช่น Room 502 (Luxury Suite)"
                             class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
                     </div>
@@ -310,34 +688,118 @@
                             ความจุ / จำนวนผู้เข้าพัก (คน)
                         </label>
 
-                        <input type="number" id="new-room-cap"
-                            placeholder="เช่น 4" min="1"
+                        <input type="number"
+                            id="new-room-cap"
+                            placeholder="เช่น 4"
+                            min="1"
+                            max="500"
+                            step="1"
                             class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500">
                     </div>
 
-                    <button onclick="addNewRoom()"
+                    <button type="button"
+                        onclick="addNewRoom()"
                         class="w-full bg-emerald-600 hover:bg-emerald-700 font-bold p-2.5 rounded-xl transition">
                         สร้างห้องบริการ
                     </button>
 
                 </div>
+
             </div>
 
-            <!-- BOOKING TABLE -->
+
+            <!-- BOOKING HISTORY -->
             <div class="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
 
-                <div class="flex justify-between items-center gap-3">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-indigo-400">
+                            <i class="fa-solid fa-globe mr-2"></i>
+                            รายการคำขอจองทั้งหมดในระบบ
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            ค้นหา กรองรายการ และตรวจสอบรายละเอียดการจอง
+                        </p>
+                    </div>
+                    <span id="admin-booking-count"
+                        class="text-xs text-slate-400 sm:text-right"
+                        aria-live="polite">
+                        กำลังโหลดรายการ...
+                    </span>
+                </div>
 
-                    <h2 class="text-lg font-bold text-indigo-400">
-                        <i class="fa-solid fa-globe mr-2"></i>
-                        รายการคำขอจองทั้งหมดในระบบ
-                    </h2>
+                <!-- BOOKING SEARCH & FILTERS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 bg-slate-950/50 border border-slate-700/70 rounded-xl p-4">
 
-                    <button onclick="clearAllData()"
-                        class="text-xs text-red-400 hover:underline">
-                        <i class="fa-solid fa-trash-can mr-1"></i>
-                        ล้างฐานข้อมูล
-                    </button>
+                    <div class="sm:col-span-2 xl:col-span-2">
+                        <label for="admin-booking-search"
+                            class="block text-xs text-slate-400 mb-1.5">
+                            ค้นหาการจอง
+                        </label>
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="search"
+                                id="admin-booking-search"
+                                autocomplete="off"
+                                placeholder="Booking Code, ชื่อผู้จอง, อีเมล หรือชื่อห้อง"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="admin-booking-status-filter"
+                            class="block text-xs text-slate-400 mb-1.5">
+                            สถานะการจอง
+                        </label>
+                        <select id="admin-booking-status-filter"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                            <option value="all">ทุกสถานะ</option>
+                            <option value="confirmed">ยืนยันแล้ว</option>
+                            <option value="cancelled">ยกเลิกแล้ว</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="admin-booking-type-filter"
+                            class="block text-xs text-slate-400 mb-1.5">
+                            ประเภทห้อง
+                        </label>
+                        <select id="admin-booking-type-filter"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                            <option value="all">ทุกประเภท</option>
+                            <option value="meeting">ห้องประชุม</option>
+                            <option value="residence">ห้องพัก</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="admin-booking-date-from"
+                            class="block text-xs text-slate-400 mb-1.5">
+                            วันเริ่มใช้งาน ตั้งแต่
+                        </label>
+                        <input type="date"
+                            id="admin-booking-date-from"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label for="admin-booking-date-to"
+                            class="block text-xs text-slate-400 mb-1.5">
+                            ถึงวันที่
+                        </label>
+                        <input type="date"
+                            id="admin-booking-date-to"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                    </div>
+
+                    <div class="sm:col-span-2 xl:col-span-2 flex items-end justify-start xl:justify-end">
+                        <button type="button"
+                            id="admin-booking-reset-filters"
+                            class="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 text-sm font-semibold px-4 py-2.5 rounded-lg transition">
+                            <i class="fa-solid fa-rotate-left mr-1.5"></i>
+                            ล้างตัวกรอง
+                        </button>
+                    </div>
 
                 </div>
 
@@ -350,7 +812,7 @@
                                 <th class="p-3">ประเภท/ห้อง</th>
                                 <th class="p-3">วัน/เวลาที่จอง (เข้า - ออก)</th>
                                 <th class="p-3">ผู้จอง (อีเมล)</th>
-                                <th class="p-3 text-center">การจัดการ</th>
+                                <th class="p-3 text-center">รายละเอียด / การจัดการ</th>
                             </tr>
                         </thead>
 
@@ -359,9 +821,209 @@
                         </tbody>
 
                     </table>
+
                 </div>
+
             </div>
+
+
+            <!-- ROOM MANAGEMENT -->
+            <div class="lg:col-span-3 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+
+                    <div>
+                        <h2 class="text-lg font-bold text-emerald-400">
+                            <i class="fa-solid fa-building mr-2"></i>
+                            จัดการห้องและพื้นที่บริการ
+                        </h2>
+
+                        <p class="text-xs text-slate-400 mt-1">
+                            เพิ่ม แก้ไข เปิด–ปิด และลบห้องที่ไม่มีประวัติการจอง
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:items-end gap-2">
+
+                        <button type="button"
+                            id="refresh-admin-rooms-btn"
+                            onclick="loadAdminRooms()"
+                            class="text-xs bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-wait px-4 py-2 rounded-lg transition">
+
+                            <i class="fa-solid fa-rotate mr-1"></i>
+                            รีเฟรชรายการห้อง
+
+                        </button>
+
+                        <span id="admin-room-refresh-status"
+                            class="text-[11px] text-slate-500"
+                            aria-live="polite">
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div id="admin-room-list"
+                    class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                    <p class="text-slate-400 text-sm text-center py-6 md:col-span-2">
+                        กำลังโหลดข้อมูลห้อง...
+                    </p>
+
+                </div>
+
+            </div>
+
         </div>
+
+
+        <!-- EDIT ROOM MODAL -->
+        <div id="edit-room-modal"
+            class="hidden fixed inset-0 z-50 bg-black/70 p-4 items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-room-title">
+
+            <div class="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-5">
+
+                <div class="flex justify-between items-center">
+
+                    <h2 id="edit-room-title"
+                        class="text-lg font-bold text-indigo-400">
+                        <i class="fa-solid fa-pen-to-square mr-2"></i>
+                        แก้ไขข้อมูลห้อง
+                    </h2>
+
+                    <button type="button"
+                        onclick="closeEditRoom()"
+                        class="text-slate-400 hover:text-white"
+                        aria-label="ปิดหน้าต่างแก้ไข">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+
+                </div>
+
+                <input type="hidden" id="edit-room-id">
+
+                <div class="space-y-2">
+
+                    <label for="edit-room-name"
+                        class="block text-sm text-slate-400">
+                        ชื่อห้อง / เลขห้อง
+                    </label>
+
+                    <input type="text"
+                        id="edit-room-name"
+                        maxlength="120"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
+
+                </div>
+
+                <div class="space-y-2">
+
+                    <label for="edit-room-capacity"
+                        class="block text-sm text-slate-400">
+                        ความจุ / จำนวนผู้เข้าพัก
+                    </label>
+
+                    <input type="number"
+                        id="edit-room-capacity"
+                        min="1"
+                        max="500"
+                        step="1"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
+
+                </div>
+
+                <div class="space-y-2">
+
+                    <label for="edit-room-type"
+                        class="block text-sm text-slate-400">
+                        ประเภทห้อง
+                    </label>
+
+                    <select id="edit-room-type"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none">
+
+                        <option value="meeting">
+                            ห้องประชุม (Meeting Room)
+                        </option>
+
+                        <option value="residence">
+                            ห้องพัก / ที่พัก (Residence)
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="flex gap-2 pt-2">
+
+                    <button type="button"
+                        onclick="closeEditRoom()"
+                        class="flex-1 bg-slate-700 hover:bg-slate-600 p-3 rounded-xl text-sm font-semibold transition">
+                        ยกเลิก
+                    </button>
+
+                    <button type="button"
+                        id="edit-room-save-button"
+                        onclick="saveRoomChanges()"
+                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 p-3 rounded-xl text-sm font-semibold transition">
+
+                        <i class="fa-solid fa-floppy-disk mr-1"></i>
+                        บันทึกการแก้ไข
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- BOOKING DETAIL MODAL -->
+        <div id="booking-detail-modal"
+            class="hidden fixed inset-0 z-[60] bg-black/75 p-4 items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="booking-detail-title">
+
+            <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-5">
+
+                <div class="flex justify-between items-start gap-3">
+                    <div>
+                        <h2 id="booking-detail-title" class="text-lg font-bold text-indigo-400">
+                            <i class="fa-solid fa-clipboard-list mr-2"></i>
+                            รายละเอียดการจอง
+                        </h2>
+                        <p id="booking-detail-code" class="text-xs text-slate-400 mt-1"></p>
+                    </div>
+                    <button type="button"
+                        onclick="closeBookingDetail()"
+                        class="text-slate-400 hover:text-white p-1"
+                        aria-label="ปิดรายละเอียดการจอง">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div id="booking-detail-content"
+                    class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="button"
+                        onclick="closeBookingDetail()"
+                        class="bg-slate-700 hover:bg-slate-600 px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+                        ปิดหน้าต่าง
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
     </section>
 
 </div>

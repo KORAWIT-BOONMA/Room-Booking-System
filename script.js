@@ -1,66 +1,22 @@
-
 // ==========================================
-// HYBRID RESERVE - JAVASCRIPT SYSTEM
+// HYBRID RESERVE - DATABASE VERSION
+// Frontend: Express API + SQLite
 // ==========================================
 
-// DEFAULT ROOMS
-const defaultRooms = [
-    { id: "h1", name: "Room A - Creative Lounge", capacity: 8, type: "meeting" },
-    { id: "h2", name: "Room B - Executive Chamber", capacity: 20, type: "meeting" },
-    { id: "n1", name: "Normal Room 101", capacity: 4, type: "residence" },
-    { id: "n2", name: "Normal Room 102", capacity: 4, type: "residence" },
-    { id: "n3", name: "Normal Room 103", capacity: 4, type: "residence" },
-    { id: "n4", name: "Normal Room 104", capacity: 4, type: "residence" },
-    { id: "n5", name: "Normal Room 105", capacity: 4, type: "residence" },
-    { id: "s1", name: "Suite Room 201 (Luxury)", capacity: 2, type: "residence" },
-    { id: "s2", name: "Suite Room 202 (Luxury)", capacity: 2, type: "residence" },
-    { id: "s3", name: "Suite Room 203 (Luxury)", capacity: 2, type: "residence" },
-    { id: "s4", name: "Suite Room 204 (Luxury)", capacity: 2, type: "residence" },
-    { id: "s5", name: "Suite Room 205 (Luxury)", capacity: 2, type: "residence" }
-];
+const API_BASE = "/api";
+
+let rooms = [];
+let adminBookings = [];
+let adminRooms = [];
+let adminDashboard = null;
 
 
 // ==========================================
-// LOAD AND SAVE STORAGE
-// ==========================================
-
-function loadStorage(key, fallback) {
-    try {
-        const saved = localStorage.getItem(key);
-
-        if (saved === null) return fallback;
-
-        const parsed = JSON.parse(saved);
-
-        return Array.isArray(parsed) ? parsed : fallback;
-
-    } catch (error) {
-        console.error(`อ่านข้อมูล ${key} ไม่สำเร็จ:`, error);
-        return fallback;
-    }
-}
-
-let rooms = loadStorage("h_rooms", [...defaultRooms]);
-let bookings = loadStorage("h_bookings", []);
-
-
-function syncStorage() {
-    try {
-        localStorage.setItem("h_rooms", JSON.stringify(rooms));
-        localStorage.setItem("h_bookings", JSON.stringify(bookings));
-
-    } catch (error) {
-        console.error("บันทึกข้อมูลไม่สำเร็จ:", error);
-        alert("ไม่สามารถบันทึกข้อมูลใน Browser ได้");
-    }
-}
-
-
-// ==========================================
-// HTML SECURITY HELPER
+// HTML SECURITY
 // ==========================================
 
 function escapeHTML(value) {
+
     return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
         "<": "&lt;",
@@ -68,46 +24,89 @@ function escapeHTML(value) {
         '"': "&quot;",
         "'": "&#39;"
     })[char]);
+
 }
 
 
 // ==========================================
-// TAB NAVIGATION
+// API REQUEST HELPER
 // ==========================================
 
-function switchTab(tab) {
+async function apiRequest(endpoint, options = {}, authenticated = false) {
 
-    ["tab-book", "tab-my-booking", "tab-admin"].forEach(id => {
-        document.getElementById(id).classList.add("hidden");
-    });
+    const headers = {
+        Accept: "application/json",
+        ...(options.headers || {})
+    };
 
-    document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    if (options.body && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+    }
 
-    ["book", "my-booking", "admin"].forEach(name => {
+    if (authenticated) {
 
-        const button = document.getElementById(`btn-tab-${name}`);
+        const token = sessionStorage.getItem("hybrid_admin_token");
 
-        button.className = name === tab
-            ? "px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition"
-            : "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition";
-    });
+        if (!token) {
+            const error = new Error("กรุณาเข้าสู่ระบบ Admin");
+            error.status = 401;
+            throw error;
+        }
+
+        headers.Authorization = `Bearer ${token}`;
+
+    }
+
+    let response;
+
+    try {
+
+        response = await fetch(`${API_BASE}${endpoint}`, {
+            ...options,
+            headers
+        });
+
+    } catch (error) {
+
+        const networkError = new Error(
+            "ไม่สามารถเชื่อมต่อ Server ได้ กรุณาตรวจสอบ Backend"
+        );
+
+        networkError.cause = error;
+        throw networkError;
+
+    }
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+
+        const error = new Error(
+            data?.message || `เกิดข้อผิดพลาด HTTP ${response.status}`
+        );
+
+        error.status = response.status;
+        error.data = data;
+
+        throw error;
+
+    }
+
+    return data;
+
 }
 
 
 // ==========================================
-// DATE AND TIME FUNCTIONS
+// DATE / TIME FUNCTIONS
 // ==========================================
-
-// แปลงวันเวลาเป็นรูปแบบที่เรียงเปรียบเทียบได้
-// ตัวอย่าง 2026-11-09T09:00
 
 function dateTimeKey(date, time) {
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) {
-        return null;
-    }
-
-    if (!/^\d{2}:\d{2}$/.test(time || "")) {
+    if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(date || "") ||
+        !/^\d{2}:\d{2}$/.test(time || "")
+    ) {
         return null;
     }
 
@@ -118,27 +117,29 @@ function dateTimeKey(date, time) {
     }
 
     return `${date}T${time}`;
+
 }
 
 
-// ดึงช่วงเวลาเริ่มต้นและสิ้นสุดของรายการจอง
-function bookingRange(booking) {
+function splitDateTime(value) {
 
-    const startDate = booking.startDate || booking.date;
-    const endDate = booking.endDate || booking.date;
-
-    const start = dateTimeKey(startDate, booking.startTime);
-    const end = dateTimeKey(endDate, booking.endTime);
-
-    if (!start || !end || start >= end) {
-        return null;
+    if (typeof value !== "string" || !value.includes("T")) {
+        return {
+            date: "",
+            time: ""
+        };
     }
 
-    return { start, end };
+    const [date, time] = value.split("T");
+
+    return {
+        date,
+        time: (time || "").slice(0, 5)
+    };
+
 }
 
 
-// แสดงวันที่ภาษาไทย
 function formatThaiDate(dateStr) {
 
     if (!dateStr) return "-";
@@ -154,54 +155,1433 @@ function formatThaiDate(dateStr) {
         month: "short",
         year: "numeric"
     });
+
+}
+
+
+function statusLabel(status) {
+
+    return status === "cancelled"
+        ? "ยกเลิกแล้ว"
+        : "จองสำเร็จ";
+
+}
+
+
+function formatThaiDateTime(value) {
+
+    if (!value || typeof value !== "string") return "-";
+
+    const normalized = value.replace("T", " ");
+    const [datePart, timePart] = normalized.split(/\s+/, 2);
+    const dateLabel = formatThaiDate(datePart);
+
+    if (!timePart) return dateLabel;
+
+    return `${dateLabel} เวลา ${timePart.slice(0, 8)} น.`;
+
 }
 
 
 // ==========================================
-// BOOKING CONFLICT CHECK
-// ตรวจสอบการจองซ้ำและเวลาทับซ้อน
+// ADMIN: LOAD DASHBOARD SUMMARY
 // ==========================================
 
-function checkBookingConflict(
-    roomId,
-    startKey,
-    endKey,
-    ignoreBookingId = null
-) {
+async function loadAdminDashboard() {
 
-    return bookings.find(existing => {
+    const button = document.getElementById("refresh-dashboard-btn");
+    const status = document.getElementById("dashboard-refresh-status");
+    const recentBody = document.getElementById("admin-dashboard-recent");
+    const originalHTML = button?.innerHTML;
 
-        // ตรวจสอบเฉพาะห้องเดียวกัน
-        if (
-            existing.roomId !== roomId ||
-            existing.id === ignoreBookingId
-        ) {
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin mr-1"></i>
+            กำลังโหลด...
+        `;
+    }
+
+    if (status) {
+        status.textContent = "กำลังดึงข้อมูลจากฐานข้อมูล...";
+        status.className = "text-[11px] text-indigo-400";
+    }
+
+    try {
+
+        const data = await apiRequest(
+            `/admin/dashboard?refresh=${Date.now()}`,
+            {
+                method: "GET",
+                cache: "no-store"
+            },
+            true
+        );
+
+        if (!data?.success || !data.summary) {
+            throw new Error("รูปแบบข้อมูล Dashboard จาก Server ไม่ถูกต้อง");
+        }
+
+        adminDashboard = data;
+        renderAdminDashboard();
+
+        if (status) {
+            const time = new Date().toLocaleTimeString("th-TH", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+            status.textContent = `อัปเดตสำเร็จ ${time} · ${data.timezone || "เวลาระบบ"}`;
+            status.className = "text-[11px] text-emerald-400";
+        }
+
+        return true;
+
+    } catch (error) {
+
+        console.error("Load dashboard error:", error);
+
+        if (error.status === 401) {
+            handleAdminError(error);
             return false;
         }
 
-        const range = bookingRange(existing);
+        if (recentBody) {
+            recentBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center p-5 text-red-400 text-xs">
+                        ${escapeHTML(error.message || "โหลดข้อมูล Dashboard ไม่สำเร็จ")}
+                    </td>
+                </tr>
+            `;
+        }
 
-        if (!range) {
-            console.warn(
-                "ข้ามข้อมูลการจองเก่าที่วันเวลาผิดรูปแบบ:",
-                existing
+        if (status) {
+            status.textContent = "โหลดข้อมูลไม่สำเร็จ · กดรีเฟรชเพื่อลองอีกครั้ง";
+            status.className = "text-[11px] text-red-400";
+        }
+
+        return false;
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalHTML ||
+                '<i class="fa-solid fa-rotate mr-1"></i> รีเฟรช Dashboard';
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: RENDER DASHBOARD
+// ==========================================
+
+function renderAdminDashboard() {
+
+    if (!adminDashboard?.summary) return;
+
+    const summary = adminDashboard.summary;
+    const roomSummary = summary.rooms || {};
+    const bookingSummary = summary.bookings || {};
+
+    const values = {
+        "dashboard-room-total": roomSummary.total,
+        "dashboard-room-active": roomSummary.active,
+        "dashboard-room-inactive": roomSummary.inactive,
+        "dashboard-booking-total": bookingSummary.total,
+        "dashboard-booking-confirmed": bookingSummary.confirmed,
+        "dashboard-booking-cancelled": bookingSummary.cancelled,
+        "dashboard-created-today": bookingSummary.createdToday,
+        "dashboard-scheduled-today": bookingSummary.scheduledToday
+    };
+
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            const number = Number(value);
+            element.textContent = Number.isFinite(number) ? number.toLocaleString("th-TH") : "0";
+        }
+    });
+
+    const tbody = document.getElementById("admin-dashboard-recent");
+    if (!tbody) return;
+
+    const bookings = Array.isArray(adminDashboard.recentBookings)
+        ? adminDashboard.recentBookings
+        : [];
+
+    tbody.replaceChildren();
+
+    if (bookings.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center p-5 text-slate-500 text-xs">
+                    ยังไม่มีรายการจองในระบบ
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    bookings.forEach(booking => {
+
+        const start = splitDateTime(booking.startAt);
+        const isCancelled = booking.status === "cancelled";
+        const row = document.createElement("tr");
+        row.className = "hover:bg-slate-700/30 transition text-xs";
+
+        row.innerHTML = `
+            <td class="p-3 min-w-[170px]">
+                <span class="block font-semibold text-indigo-300">
+                    ${escapeHTML(booking.bookingCode || "-")}
+                </span>
+                <span class="block text-slate-400 mt-1">
+                    ${escapeHTML(booking.roomName || "-")}
+                </span>
+            </td>
+            <td class="p-3 min-w-[150px]">
+                <span class="block text-slate-200">${escapeHTML(booking.userName || "-")}</span>
+                <span class="block text-slate-500 mt-1 break-all">${escapeHTML(booking.userEmail || "-")}</span>
+            </td>
+            <td class="p-3 whitespace-nowrap text-slate-300">
+                ${escapeHTML(formatThaiDate(start.date))}
+                <span class="block text-slate-500 mt-1">${escapeHTML(start.time || "-")} น.</span>
+            </td>
+            <td class="p-3 text-center whitespace-nowrap">
+                <span class="inline-block px-2 py-1 rounded-lg border text-[11px] ${
+                    isCancelled
+                        ? "bg-red-950/70 text-red-300 border-red-800/60"
+                        : "bg-emerald-950/70 text-emerald-300 border-emerald-800/60"
+                }">
+                    ${escapeHTML(statusLabel(booking.status))}
+                </span>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+
+    });
+
+}
+
+
+// ==========================================
+// ADMIN: CHANGE PASSWORD
+// ==========================================
+
+async function changeAdminPassword(event) {
+
+    event.preventDefault();
+
+    const currentPassword = document.getElementById("admin-current-password")?.value || "";
+    const newPassword = document.getElementById("admin-new-password")?.value || "";
+    const confirmPassword = document.getElementById("admin-confirm-password")?.value || "";
+    const button = document.getElementById("change-admin-password-btn");
+    const form = document.getElementById("admin-password-form");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        alert("กรุณากรอกรหัสผ่านให้ครบทุกช่อง");
+        return;
+    }
+
+    if (newPassword.length < 12) {
+        alert("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 12 ตัวอักษร");
+        return;
+    }
+
+    if (new TextEncoder().encode(newPassword).length > 72) {
+        alert("รหัสผ่านใหม่ยาวเกินกำหนด สูงสุด 72 ไบต์");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        return;
+    }
+
+    if (newPassword === currentPassword) {
+        alert("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
+        return;
+    }
+
+    const originalHTML = button?.innerHTML;
+
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังเปลี่ยนรหัสผ่าน...';
+    }
+
+    try {
+
+        const data = await apiRequest("/auth/password", {
+            method: "PATCH",
+            body: JSON.stringify({
+                currentPassword,
+                newPassword,
+                confirmPassword
+            })
+        }, true);
+
+        form?.reset();
+
+        alert(data.message || "เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่");
+
+        // The server increments auth_version, so every old token is invalid now.
+        clearAdminSession();
+        switchTab("admin");
+
+    } catch (error) {
+
+        console.error("Change admin password error:", error);
+        if (error.status === 401) {
+            handleAdminError(error);
+        } else {
+            alert(error.message || "ไม่สามารถเปลี่ยนรหัสผ่านได้");
+        }
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalHTML || '<i class="fa-solid fa-key mr-1"></i> เปลี่ยนรหัสผ่าน Admin';
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: DATABASE BACKUP LIST
+// ==========================================
+
+function formatFileSize(bytes) {
+
+    const value = Number(bytes || 0);
+    if (!Number.isFinite(value) || value <= 0) return "0 Bytes";
+    if (value < 1024) return `${value} Bytes`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+
+}
+
+
+function renderDatabaseBackups(backups = []) {
+
+    const container = document.getElementById("admin-backup-list");
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (!Array.isArray(backups) || backups.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-3">ยังไม่มีไฟล์สำรองฐานข้อมูล</p>';
+        return;
+    }
+
+    backups.forEach(backup => {
+
+        const item = document.createElement("div");
+        item.className = "flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg p-3";
+
+        const created = backup.createdAt
+            ? new Date(backup.createdAt).toLocaleString("th-TH")
+            : "ไม่ทราบวันที่";
+
+        item.innerHTML = `
+            <div class="min-w-0">
+                <p class="text-xs text-slate-200 font-medium break-all">${escapeHTML(backup.fileName)}</p>
+                <p class="text-[10px] text-slate-500 mt-1">${escapeHTML(created)} · ${escapeHTML(formatFileSize(backup.sizeBytes))}</p>
+            </div>
+            <button type="button" class="download-database-backup shrink-0 text-xs bg-slate-700 hover:bg-slate-600 text-sky-300 px-3 py-2 rounded-lg transition">
+                <i class="fa-solid fa-download mr-1"></i> ดาวน์โหลด
+            </button>
+        `;
+
+        item.querySelector(".download-database-backup")?.addEventListener("click", () => {
+            downloadDatabaseBackup(backup.fileName);
+        });
+
+        container.appendChild(item);
+
+    });
+
+}
+
+
+async function loadDatabaseBackups() {
+
+    const container = document.getElementById("admin-backup-list");
+    if (!container || !sessionStorage.getItem("hybrid_admin_token")) return false;
+
+    try {
+
+        const data = await apiRequest("/admin/backups", {
+            method: "GET",
+            cache: "no-store"
+        }, true);
+
+        renderDatabaseBackups(data.backups || []);
+        return true;
+
+    } catch (error) {
+
+        console.error("Load database backups error:", error);
+
+        if (error.status === 401) {
+            handleAdminError(error);
+        } else {
+            container.innerHTML = `<p class="text-xs text-red-400 text-center py-3">${escapeHTML(error.message || "โหลดรายการไฟล์สำรองไม่สำเร็จ")}</p>`;
+        }
+
+        return false;
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: CREATE DATABASE BACKUP
+// ==========================================
+
+async function createDatabaseBackup() {
+
+    const button = document.getElementById("create-database-backup-btn");
+    const status = document.getElementById("database-backup-status");
+    const originalHTML = button?.innerHTML;
+
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังสำรองฐานข้อมูล...';
+    }
+
+    if (status) {
+        status.textContent = "กำลังสร้างไฟล์สำรองจาก SQLite...";
+        status.className = "text-[11px] text-sky-300";
+    }
+
+    try {
+
+        const data = await apiRequest("/admin/backup", {
+            method: "POST"
+        }, true);
+
+        if (!data?.success || !data.backup?.fileName) {
+            throw new Error("Server ไม่ได้ส่งข้อมูลไฟล์สำรองกลับมา");
+        }
+
+        if (status) {
+            status.textContent = `สำรองสำเร็จ: ${data.backup.fileName} · ${formatFileSize(data.backup.sizeBytes)}`;
+            status.className = "text-[11px] text-emerald-400 break-all";
+        }
+
+        await loadDatabaseBackups();
+
+    } catch (error) {
+
+        console.error("Create database backup error:", error);
+
+        if (status) {
+            status.textContent = error.message || "สำรองฐานข้อมูลไม่สำเร็จ";
+            status.className = "text-[11px] text-red-400";
+        }
+
+        if (error.status === 401) {
+            handleAdminError(error);
+        }
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalHTML || '<i class="fa-solid fa-cloud-arrow-down mr-1"></i> สำรองฐานข้อมูลตอนนี้';
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: DOWNLOAD DATABASE BACKUP
+// ==========================================
+
+async function downloadDatabaseBackup(fileName) {
+
+    const token = sessionStorage.getItem("hybrid_admin_token");
+
+    if (!token) {
+        alert("กรุณาเข้าสู่ระบบ Admin ใหม่");
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/admin/backups/${encodeURIComponent(fileName)}/download`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => null);
+            const error = new Error(data?.message || `ดาวน์โหลดไม่สำเร็จ HTTP ${response.status}`);
+            error.status = response.status;
+            throw error;
+        }
+
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+    } catch (error) {
+
+        console.error("Download backup error:", error);
+
+        if (error.status === 401) {
+            handleAdminError(error);
+        } else {
+            alert(error.message || "ไม่สามารถดาวน์โหลดไฟล์สำรองได้");
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// TAB NAVIGATION
+// ==========================================
+
+function switchTab(tab) {
+
+    ["tab-book", "tab-my-booking", "tab-admin"].forEach(id => {
+
+        const section = document.getElementById(id);
+
+        if (section) {
+            section.classList.add("hidden");
+        }
+
+    });
+
+    const target = document.getElementById(`tab-${tab}`);
+
+    if (target) {
+        target.classList.remove("hidden");
+    }
+
+    ["book", "my-booking", "admin"].forEach(name => {
+
+        const button = document.getElementById(`btn-tab-${name}`);
+
+        if (!button) return;
+
+        button.className = name === tab
+            ? "px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition"
+            : "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition";
+
+    });
+
+}
+
+
+// ==========================================
+// ADMIN SESSION
+// ==========================================
+
+function clearAdminSession() {
+
+    sessionStorage.removeItem("hybrid_admin_token");
+    sessionStorage.removeItem("hybrid_admin_username");
+
+    const gate = document.getElementById("admin-gate");
+    const content = document.getElementById("admin-content");
+
+    if (gate) {
+        gate.classList.remove("hidden");
+    }
+
+    if (content) {
+        content.classList.add("hidden");
+        content.classList.remove("grid");
+    }
+
+    const usernameInput = document.getElementById("admin-username");
+    const passwordInput = document.getElementById("admin-pass");
+
+    if (usernameInput) usernameInput.value = "";
+    if (passwordInput) passwordInput.value = "";
+
+    const sessionName = document.getElementById("admin-session-name");
+
+    if (sessionName) {
+        sessionName.textContent = "ผู้ดูแลระบบ";
+    }
+
+    adminBookings = [];
+    adminRooms = [];
+    adminDashboard = null;
+    renderDatabaseBackups([]);
+    document.getElementById("admin-password-form")?.reset();
+
+    const backupStatus = document.getElementById("database-backup-status");
+    if (backupStatus) {
+        backupStatus.textContent = "ยังไม่มีการสำรองใน Session นี้";
+        backupStatus.className = "text-[11px] text-slate-400";
+    }
+
+    resetAdminBookingFilters();
+    renderAdminDashboard();
+    renderAdminRooms();
+
+    const refreshStatus = document.getElementById(
+        "admin-room-refresh-status"
+    );
+
+    if (refreshStatus) {
+        refreshStatus.textContent = "";
+    }
+
+    closeEditRoom();
+    closeBookingDetail();
+
+}
+
+
+// ==========================================
+// SHOW ADMIN CONTENT
+// ==========================================
+
+function showAdminContent(username) {
+
+    const gate = document.getElementById("admin-gate");
+    const content = document.getElementById("admin-content");
+
+    if (gate) {
+        gate.classList.add("hidden");
+    }
+
+    if (content) {
+        content.classList.remove("hidden");
+        content.classList.add("grid");
+
+        content.setAttribute(
+            "title",
+            `ผู้ดูแลระบบ: ${username || "Admin"}`
+        );
+    }
+
+    const sessionName = document.getElementById("admin-session-name");
+
+    if (sessionName) {
+        sessionName.textContent = username || "Admin";
+    }
+
+}
+
+
+// ==========================================
+// ADMIN LOGOUT
+// ==========================================
+
+function logoutAdmin() {
+
+    const confirmed = confirm(
+        "ต้องการออกจากระบบ Admin หรือไม่?"
+    );
+
+    if (!confirmed) return;
+
+    clearAdminSession();
+
+    switchTab("admin");
+
+    alert("ออกจากระบบ Admin เรียบร้อยแล้ว");
+
+}
+
+
+// ==========================================
+// ADMIN ERROR HANDLER
+// ==========================================
+
+function handleAdminError(error) {
+
+    console.error("Admin API Error:", error);
+
+    if (error.status === 401) {
+
+        clearAdminSession();
+
+        alert(
+            "Session หมดอายุหรือไม่มีสิทธิ์ Admin กรุณาเข้าสู่ระบบใหม่"
+        );
+
+        return;
+
+    }
+
+    alert(error.message || "เกิดข้อผิดพลาดในการจัดการระบบ");
+
+}
+
+
+// ==========================================
+// ADMIN LOGIN
+// ==========================================
+
+async function unlockAdmin() {
+
+    const usernameInput = document.getElementById("admin-username");
+    const passwordInput = document.getElementById("admin-pass");
+    const loginButton = document.getElementById("admin-login-button");
+
+    if (!usernameInput || !passwordInput || !loginButton) {
+        alert("ไม่พบช่อง Username หรือ Password");
+        return;
+    }
+
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!username || !password) {
+        alert("กรุณากรอก Username และ Password");
+        return;
+    }
+
+    loginButton.disabled = true;
+    loginButton.textContent = "กำลังตรวจสอบ...";
+
+    try {
+
+        const data = await apiRequest("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({
+                username,
+                password
+            })
+        });
+
+        if (!data.accessToken || !data.admin) {
+            throw new Error("ไม่ได้รับข้อมูล Session จาก Server");
+        }
+
+        sessionStorage.setItem(
+            "hybrid_admin_token",
+            data.accessToken
+        );
+
+        sessionStorage.setItem(
+            "hybrid_admin_username",
+            data.admin.username
+        );
+
+        passwordInput.value = "";
+
+        showAdminContent(data.admin.username);
+
+        alert(`เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ ${data.admin.username}`);
+
+        await Promise.all([
+            loadAdminDashboard(),
+            loadAdminBookings(),
+            loadAdminRooms(),
+            loadDatabaseBackups()
+        ]);
+
+    } catch (error) {
+
+        console.error("Login Error:", error);
+
+        alert(error.message || "ไม่สามารถเข้าสู่ระบบได้");
+
+    } finally {
+
+        loginButton.disabled = false;
+        loginButton.textContent = "เข้าสู่แผงควบคุม";
+
+    }
+
+}
+
+
+// ==========================================
+// RESTORE ADMIN SESSION
+// ==========================================
+
+async function restoreAdminSession() {
+
+    const token = sessionStorage.getItem("hybrid_admin_token");
+
+    if (!token) {
+        clearAdminSession();
+        return;
+    }
+
+    try {
+
+        const data = await apiRequest(
+            "/auth/me",
+            { method: "GET" },
+            true
+        );
+
+        showAdminContent(data.admin?.username);
+
+        await Promise.all([
+            loadAdminDashboard(),
+            loadAdminBookings(),
+            loadAdminRooms(),
+            loadDatabaseBackups()
+        ]);
+
+    } catch (error) {
+
+        console.error("Restore session error:", error);
+
+        if (error.status === 401) {
+            clearAdminSession();
+        } else {
+            alert(error.message || "ไม่สามารถตรวจสอบ Session ได้");
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// LOAD ACTIVE ROOMS
+// ==========================================
+
+async function loadRooms() {
+
+    try {
+
+        const data = await apiRequest("/rooms");
+
+        rooms = Array.isArray(data.rooms)
+            ? data.rooms
+            : [];
+
+        initRoomUI();
+
+        return true;
+
+    } catch (error) {
+
+        console.error("Load rooms error:", error);
+
+        rooms = [];
+
+        initRoomUI();
+
+        alert(error.message || "ไม่สามารถโหลดข้อมูลห้องได้");
+
+        return false;
+
+    }
+
+}
+
+
+// ==========================================
+// INITIALIZE ROOM UI
+// ==========================================
+
+function initRoomUI() {
+
+    const select = document.getElementById("book-room");
+    const badgeList = document.getElementById("room-badge-list");
+
+    if (!select || !badgeList) return;
+
+    select.replaceChildren();
+    badgeList.replaceChildren();
+
+    if (rooms.length === 0) {
+
+        const option = document.createElement("option");
+
+        option.value = "";
+        option.textContent = "ไม่พบห้องที่เปิดให้บริการ";
+        option.disabled = true;
+        option.selected = true;
+
+        select.appendChild(option);
+
+        badgeList.innerHTML = `
+            <p class="text-slate-400 text-sm text-center py-6">
+                ยังไม่มีข้อมูลห้องที่เปิดให้บริการ
+            </p>
+        `;
+
+        return;
+
+    }
+
+    rooms.forEach(room => {
+
+        const isMeeting = room.type === "meeting";
+
+        const option = document.createElement("option");
+
+        option.value = room.id;
+
+        option.textContent =
+            `[${isMeeting ? "ห้องประชุม" : "ที่พัก"}] ${room.name} (สูงสุด ${room.capacity} คน)`;
+
+        select.appendChild(option);
+
+        const badge = document.createElement("div");
+
+        badge.className =
+            `p-3 rounded-xl border ${
+                isMeeting
+                    ? "border-indigo-500/30"
+                    : "border-emerald-500/30"
+            } bg-slate-950 flex items-center justify-between text-sm shadow-sm`;
+
+        badge.innerHTML = `
+            <div class="flex items-center gap-2.5">
+
+                <i class="fa-solid ${
+                    isMeeting
+                        ? "fa-briefcase text-indigo-400"
+                        : "fa-bed text-emerald-400"
+                }"></i>
+
+                <span class="font-medium text-slate-200">
+                    ${escapeHTML(room.name)}
+                </span>
+
+            </div>
+
+            <span class="text-[11px] px-2 py-0.5 rounded border ${
+                isMeeting
+                    ? "bg-indigo-950 text-indigo-300 border-indigo-800/40"
+                    : "bg-emerald-950 text-emerald-300 border-emerald-800/40"
+            }">
+                ${Number(room.capacity)} คน
+            </span>
+        `;
+
+        badgeList.appendChild(badge);
+
+    });
+
+}
+
+
+// ==========================================
+// ADMIN: LOAD ALL ROOMS
+// ==========================================
+
+async function loadAdminRooms() {
+
+    const button = document.getElementById(
+        "refresh-admin-rooms-btn"
+    );
+
+    const status = document.getElementById(
+        "admin-room-refresh-status"
+    );
+
+    const originalHTML = button?.innerHTML;
+
+    if (button) {
+
+        button.disabled = true;
+
+        button.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin mr-1"></i>
+            กำลังรีเฟรช...
+        `;
+
+    }
+
+    if (status) {
+        status.textContent = "กำลังดึงข้อมูลจากฐานข้อมูล...";
+        status.className = "text-[11px] text-indigo-400";
+    }
+
+    try {
+
+        const data = await apiRequest(
+            `/rooms/admin?refresh=${Date.now()}`,
+            {
+                method: "GET",
+                cache: "no-store"
+            },
+            true
+        );
+
+        adminRooms = Array.isArray(data.rooms)
+            ? data.rooms
+            : [];
+
+        renderAdminRooms();
+
+        if (status) {
+
+            const time = new Date().toLocaleTimeString(
+                "th-TH",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                }
             );
 
-            return false;
+            status.textContent =
+                `อัปเดตข้อมูลสำเร็จ ${adminRooms.length} ห้อง · ${time}`;
+
+            status.className = "text-[11px] text-emerald-400";
+
         }
 
-        // ตรวจสอบเวลาทับซ้อน
-        return startKey < range.end && endKey > range.start;
+        return true;
 
-    }) || null;
+    } catch (error) {
+
+        console.error("Load admin rooms error:", error);
+
+        if (status) {
+            status.textContent = "รีเฟรชไม่สำเร็จ";
+            status.className = "text-[11px] text-red-400";
+        }
+
+        handleAdminError(error);
+
+        return false;
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+
+            button.innerHTML = originalHTML ||
+                '<i class="fa-solid fa-rotate mr-1"></i> รีเฟรชรายการห้อง';
+        }
+
+    }
+
 }
 
 
 // ==========================================
-// HANDLE NEW BOOKING
+// ADMIN: RENDER ROOM MANAGEMENT
 // ==========================================
 
-function handleBooking(event) {
+function renderAdminRooms() {
+
+    const container = document.getElementById("admin-room-list");
+
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (adminRooms.length === 0) {
+
+        container.innerHTML = `
+            <p class="text-slate-400 text-sm text-center py-6 md:col-span-2">
+                ไม่พบข้อมูลห้องในระบบ
+            </p>
+        `;
+
+        return;
+
+    }
+
+    adminRooms.forEach(room => {
+
+        const isActive = Number(room.isActive) === 1;
+        const isMeeting = room.type === "meeting";
+        const bookingCount = Number(room.bookingCount || 0);
+
+        const card = document.createElement("div");
+
+        card.className =
+            "bg-slate-950 p-4 rounded-xl border border-slate-700 flex flex-col gap-3";
+
+        card.innerHTML = `
+
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+
+                <div class="space-y-1">
+
+                    <div class="flex items-center gap-2">
+
+                        <i class="fa-solid ${
+                            isMeeting
+                                ? "fa-briefcase text-indigo-400"
+                                : "fa-bed text-emerald-400"
+                        }"></i>
+
+                        <span class="text-sm font-bold text-slate-200">
+                            ${escapeHTML(room.name)}
+                        </span>
+
+                    </div>
+
+                    <p class="text-xs text-slate-400">
+                        ${isMeeting ? "ห้องประชุม" : "ห้องพัก / ที่พัก"}
+                        · ความจุ ${Number(room.capacity)} คน
+                    </p>
+
+                    <p class="text-[11px] ${
+                        isActive ? "text-emerald-400" : "text-red-400"
+                    }">
+                        ${isActive ? "● เปิดใช้งาน" : "● ปิดใช้งาน"}
+                    </p>
+
+                    <p class="text-[11px] text-slate-500">
+                        ประวัติการจอง ${bookingCount} รายการ
+                    </p>
+
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+
+                    <button
+                        type="button"
+                        class="edit-room-button text-xs font-semibold px-3 py-2 rounded-lg border border-indigo-800 text-indigo-300 bg-indigo-950 hover:bg-indigo-900 transition">
+
+                        <i class="fa-solid fa-pen-to-square mr-1"></i>
+                        แก้ไข
+
+                    </button>
+
+                    <button
+                        type="button"
+                        class="room-status-button text-xs font-semibold px-3 py-2 rounded-lg border transition ${
+                            isActive
+                                ? "text-red-300 border-red-800 bg-red-950 hover:bg-red-900"
+                                : "text-emerald-300 border-emerald-800 bg-emerald-950 hover:bg-emerald-900"
+                        }">
+
+                        <i class="fa-solid ${
+                            isActive ? "fa-ban" : "fa-check"
+                        } mr-1"></i>
+
+                        ${isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+
+                    </button>
+
+                    ${
+                        bookingCount === 0
+                            ? `
+                                <button
+                                    type="button"
+                                    class="delete-room-button text-xs font-semibold px-3 py-2 rounded-lg border border-red-800 text-red-300 bg-red-950 hover:bg-red-900 transition">
+
+                                    <i class="fa-solid fa-trash mr-1"></i>
+                                    ลบห้อง
+
+                                </button>
+                            `
+                            : `
+                                <span class="text-[10px] text-slate-500 px-2 py-2">
+                                    มีประวัติ ไม่สามารถลบได้
+                                </span>
+                            `
+                    }
+
+                </div>
+
+            </div>
+
+        `;
+
+        card.querySelector(".edit-room-button")
+            .addEventListener("click", () => {
+                openEditRoom(room.id);
+            });
+
+        card.querySelector(".room-status-button")
+            .addEventListener("click", () => {
+                toggleRoomStatus(room.id, isActive);
+            });
+
+        const deleteButton = card.querySelector(".delete-room-button");
+
+        if (deleteButton) {
+
+            deleteButton.addEventListener("click", () => {
+                deleteRoom(room.id, room.name);
+            });
+
+        }
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+// ==========================================
+// ADMIN: EDIT ROOM - OPEN MODAL
+// ==========================================
+
+function openEditRoom(roomId) {
+
+    const room = adminRooms.find(item => item.id === roomId);
+
+    if (!room) {
+        alert("ไม่พบข้อมูลห้องที่ต้องการแก้ไข");
+        return;
+    }
+
+    document.getElementById("edit-room-id").value = room.id;
+    document.getElementById("edit-room-name").value = room.name;
+    document.getElementById("edit-room-capacity").value = room.capacity;
+    document.getElementById("edit-room-type").value = room.type;
+
+    const modal = document.getElementById("edit-room-modal");
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    document.getElementById("edit-room-name").focus();
+
+}
+
+
+// ==========================================
+// ADMIN: EDIT ROOM - CLOSE MODAL
+// ==========================================
+
+function closeEditRoom() {
+
+    const modal = document.getElementById("edit-room-modal");
+
+    if (!modal) return;
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    const idInput = document.getElementById("edit-room-id");
+
+    if (idInput) {
+        idInput.value = "";
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: EDIT ROOM - SAVE CHANGES
+// ==========================================
+
+async function saveRoomChanges() {
+
+    const roomId = document.getElementById("edit-room-id").value;
+
+    const name = document.getElementById("edit-room-name")
+        .value.trim();
+
+    const capacity = Number(
+        document.getElementById("edit-room-capacity").value
+    );
+
+    const type = document.getElementById("edit-room-type").value;
+
+    const saveButton = document.getElementById(
+        "edit-room-save-button"
+    );
+
+    if (!roomId) {
+        alert("ไม่พบรหัสห้องที่ต้องการแก้ไข");
+        return;
+    }
+
+    if (!name || name.length > 120) {
+        alert("กรุณากรอกชื่อห้องไม่เกิน 120 ตัวอักษร");
+        return;
+    }
+
+    if (
+        !Number.isInteger(capacity) ||
+        capacity < 1 ||
+        capacity > 500
+    ) {
+        alert("ความจุต้องเป็นจำนวนเต็มระหว่าง 1 ถึง 500 คน");
+        return;
+    }
+
+    if (!["meeting", "residence"].includes(type)) {
+        alert("กรุณาเลือกประเภทห้องให้ถูกต้อง");
+        return;
+    }
+
+    const originalHTML = saveButton?.innerHTML;
+
+    if (saveButton) {
+
+        saveButton.disabled = true;
+
+        saveButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin mr-1"></i>
+            กำลังบันทึก...
+        `;
+
+    }
+
+    try {
+
+        const data = await apiRequest(
+            `/rooms/${encodeURIComponent(roomId)}`,
+            {
+                method: "PATCH",
+                body: JSON.stringify({
+                    name,
+                    capacity,
+                    type
+                })
+            },
+            true
+        );
+
+        closeEditRoom();
+
+        alert(data.message || "แก้ไขข้อมูลห้องสำเร็จ");
+
+        await Promise.all([
+            loadRooms(),
+            loadAdminRooms(),
+            loadAdminDashboard()
+        ]);
+
+    } catch (error) {
+
+        console.error("Save room changes error:", error);
+
+        handleAdminError(error);
+
+    } finally {
+
+        if (saveButton) {
+
+            saveButton.disabled = false;
+
+            saveButton.innerHTML = originalHTML ||
+                '<i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกการแก้ไข';
+
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: TOGGLE ROOM STATUS
+// ==========================================
+
+async function toggleRoomStatus(roomId, currentStatus) {
+
+    const nextStatus = !currentStatus;
+
+    const confirmed = confirm(
+        nextStatus
+            ? "ต้องการเปิดใช้งานห้องนี้อีกครั้งหรือไม่?"
+            : "ต้องการปิดใช้งานห้องนี้หรือไม่?\n\nห้องจะไม่ปรากฏให้ลูกค้าจองใหม่ แต่ประวัติเดิมยังอยู่"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        const data = await apiRequest(
+            `/rooms/${encodeURIComponent(roomId)}/status`,
+            {
+                method: "PATCH",
+                body: JSON.stringify({
+                    isActive: nextStatus
+                })
+            },
+            true
+        );
+
+        alert(data.message || "เปลี่ยนสถานะห้องสำเร็จ");
+
+        await Promise.all([
+            loadRooms(),
+            loadAdminRooms(),
+            loadAdminDashboard()
+        ]);
+
+    } catch (error) {
+
+        handleAdminError(error);
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: DELETE ROOM SAFELY
+// ==========================================
+
+async function deleteRoom(roomId, roomName) {
+
+    const confirmed = confirm(
+        `ต้องการลบห้อง "${roomName}" ใช่หรือไม่?\n\n` +
+        "ระบบจะลบได้เฉพาะห้องที่ไม่มีประวัติการจองเท่านั้น\n" +
+        "การดำเนินการนี้ไม่สามารถย้อนกลับได้"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        const data = await apiRequest(
+            `/rooms/${encodeURIComponent(roomId)}`,
+            {
+                method: "DELETE"
+            },
+            true
+        );
+
+        alert(data.message || "ลบห้องสำเร็จ");
+
+        await Promise.all([
+            loadRooms(),
+            loadAdminRooms(),
+            loadAdminDashboard()
+        ]);
+
+    } catch (error) {
+
+        handleAdminError(error);
+
+    }
+
+}
+
+
+// ==========================================
+// CREATE BOOKING - SAVE TO SQLITE
+// ==========================================
+
+async function handleBooking(event) {
 
     event.preventDefault();
 
@@ -213,446 +1593,471 @@ function handleBooking(event) {
     const endDate = document.getElementById("book-end-date").value;
     const endTime = document.getElementById("book-end-time").value;
 
-    const userName = document.getElementById("book-name").value.trim();
+    const userName = document.getElementById("book-name")
+        .value.trim();
 
     const userEmail = document.getElementById("book-email")
         .value.trim().toLowerCase();
 
-
     const startKey = dateTimeKey(startDate, startTime);
     const endKey = dateTimeKey(endDate, endTime);
 
+    if (!roomId) {
+        alert("กรุณาเลือกห้องที่ต้องการจอง");
+        return;
+    }
 
-    // ตรวจสอบวันที่และเวลา
     if (!startKey || !endKey || startKey >= endKey) {
+        alert("วันและเวลาสิ้นสุดต้องอยู่หลังจากวันเวลาเริ่มต้น กรุณาตรวจสอบอีกครั้ง");
+        return;
+    }
+
+    if (!userName || !userEmail) {
+        alert("กรุณากรอกชื่อและอีเมลผู้จอง");
+        return;
+    }
+
+    const form = document.getElementById("booking-form");
+
+    const submitButton =
+        event.submitter || form.querySelector('button[type="submit"]');
+
+    const originalButtonHTML = submitButton?.innerHTML;
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "กำลังบันทึกการจอง...";
+    }
+
+    try {
+
+        const data = await apiRequest("/bookings", {
+            method: "POST",
+            body: JSON.stringify({
+                roomId,
+                startDate,
+                startTime,
+                endDate,
+                endTime,
+                userName,
+                userEmail
+            })
+        });
+
+        if (!data.booking) {
+            throw new Error("Server ไม่ได้ส่งข้อมูลการจองกลับมา");
+        }
+
+        const booking = data.booking;
 
         alert(
-            "วันและเวลาสิ้นสุดต้องอยู่หลังจากวันเวลาเริ่มต้น กรุณาตรวจสอบอีกครั้ง"
+            `จอง ${booking.roomName} สำเร็จแล้ว\n\n` +
+            `รหัสการจอง: ${booking.bookingCode}\n\n` +
+            "กรุณาบันทึก Booking Code ไว้ใช้ตรวจสอบประวัติการจอง"
         );
 
-        return;
+        form.reset();
+
+        if (sessionStorage.getItem("hybrid_admin_token")) {
+            await Promise.all([
+                loadAdminBookings(),
+                loadAdminDashboard()
+            ]);
+        }
+
+    } catch (error) {
+
+        console.error("Create booking error:", error);
+
+        if (error.data?.conflict) {
+
+            const conflict = error.data.conflict;
+
+            const start = splitDateTime(conflict.startAt);
+            const end = splitDateTime(conflict.endAt);
+
+            alert(
+                `${error.message}\n\n` +
+                `ช่วงเวลาที่ชนกัน: ` +
+                `${formatThaiDate(start.date)} ${start.time} - ` +
+                `${formatThaiDate(end.date)} ${end.time}`
+            );
+
+        } else {
+
+            alert(error.message || "ไม่สามารถบันทึกการจองได้");
+
+        }
+
+    } finally {
+
+        if (submitButton) {
+
+            submitButton.disabled = false;
+
+            submitButton.innerHTML = originalButtonHTML ||
+                '<i class="fa-regular fa-circle-check mr-1"></i> ยืนยันการส่งข้อมูลจองห้อง';
+
+        }
+
     }
 
-
-    // ตรวจสอบห้อง
-    const targetRoom = rooms.find(room => room.id === roomId);
-
-    if (!targetRoom) {
-
-        alert("ไม่พบห้องที่เลือก กรุณาเลือกห้องใหม่");
-
-        return;
-    }
-
-
-    // ตรวจสอบการจองซ้ำ
-    const conflict = checkBookingConflict(
-        roomId,
-        startKey,
-        endKey
-    );
-
-
-    if (conflict) {
-
-        const oldStartDate = conflict.startDate || conflict.date;
-        const oldEndDate = conflict.endDate || conflict.date;
-
-        alert(
-            `ไม่สามารถจองได้ เนื่องจากห้องนี้มีรายการจองทับซ้อน\n\n` +
-            `ผู้จอง: ${conflict.userName || "ไม่ระบุชื่อ"}\n` +
-            `เข้า: ${formatThaiDate(oldStartDate)} เวลา ${conflict.startTime}\n` +
-            `ออก: ${formatThaiDate(oldEndDate)} เวลา ${conflict.endTime}\n\n` +
-            "กรุณาเลือกช่วงเวลาอื่นหรือเลือกห้องอื่น"
-        );
-
-        return;
-    }
-
-
-    // สร้างรายการจองใหม่
-    const newBooking = {
-
-        id: `bk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-
-        roomId: roomId,
-        roomName: targetRoom.name,
-        roomType: targetRoom.type,
-
-        startDate: startDate,
-        startTime: startTime,
-
-        endDate: endDate,
-        endTime: endTime,
-
-        userName: userName,
-        userEmail: userEmail
-    };
-
-
-    bookings.push(newBooking);
-
-    syncStorage();
-
-    alert(
-        `จอง ${targetRoom.name} สำเร็จแล้ว คุณ ${userName}`
-    );
-
-    document.getElementById("booking-form").reset();
-
-    renderAdminTable();
 }
 
 
 // ==========================================
-// SEARCH MY BOOKINGS
+// CUSTOMER: SEARCH OWN BOOKING
 // ==========================================
 
-function searchMyBookings() {
+async function searchMyBookings() {
 
-    const email = document.getElementById("search-email")
-        .value.trim().toLowerCase();
-
+    const emailInput = document.getElementById("search-email");
+    const codeInput = document.getElementById("search-booking-code");
     const resultArea = document.getElementById("my-booking-results");
 
-
-    if (!email) {
-
-        alert("กรุณาระบุอีเมลเพื่อค้นหาประวัติการจอง");
-
+    if (!emailInput || !codeInput || !resultArea) {
+        alert("ไม่พบช่องค้นหาประวัติการจอง");
         return;
     }
 
-
-    const myBookings = bookings.filter(item =>
-        (item.userEmail || "").toLowerCase() === email
-    );
+    const email = emailInput.value.trim().toLowerCase();
+    const bookingCode = codeInput.value.trim().toUpperCase();
 
     resultArea.replaceChildren();
 
-
-    if (myBookings.length === 0) {
+    if (!email || !bookingCode) {
 
         resultArea.innerHTML = `
-            <p class="text-slate-400 text-sm text-center col-span-2 py-6">
-                ไม่พบประวัติการจองภายใต้อีเมล ${escapeHTML(email)}
+            <p class="text-amber-400 text-sm text-center col-span-2 py-6">
+                กรุณากรอกอีเมลและ Booking Code
             </p>
         `;
 
         return;
+
     }
 
+    resultArea.innerHTML = `
+        <p class="text-slate-400 text-sm text-center col-span-2 py-6">
+            กำลังค้นหาประวัติการจอง...
+        </p>
+    `;
 
-    myBookings.forEach(booking => {
+    try {
 
-        const startDate = booking.startDate || booking.date;
-        const endDate = booking.endDate || booking.date;
+        const query = new URLSearchParams({
+            email,
+            bookingCode
+        });
 
-        const isMeeting = booking.roomType === "meeting";
+        const data = await apiRequest(
+            `/bookings/my?${query.toString()}`
+        );
 
+        renderMyBooking(data.booking);
 
-        const card = document.createElement("div");
+    } catch (error) {
 
-        card.className =
-            "bg-slate-950 p-4 rounded-xl border border-slate-700 flex justify-between items-center font-mono";
+        console.error("Search booking error:", error);
 
-
-        card.innerHTML = `
-            <div class="space-y-1">
-
-                <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-800 ${isMeeting ? "text-indigo-400" : "text-emerald-400"}">
-                    ${isMeeting ? "ห้องประชุม" : "ห้องพัก/คอนโด"}
-                </span>
-
-                <h4 class="text-sm font-bold text-slate-200 mt-1">
-                    ${escapeHTML(booking.roomName)}
-                </h4>
-
-                <p class="text-xs text-slate-300">
-                    เข้า: ${formatThaiDate(startDate)}
-                    (${escapeHTML(booking.startTime)} น.)
-                </p>
-
-                <p class="text-xs text-slate-400">
-                    ออก: ${formatThaiDate(endDate)}
-                    (${escapeHTML(booking.endTime)} น.)
-                </p>
-
-            </div>
-
-            <button type="button"
-                class="cancel-booking bg-red-950 hover:bg-red-900 border border-red-700 text-red-200 text-xs py-1.5 px-3 rounded-lg transition h-fit">
-                ยกเลิก
-            </button>
+        resultArea.innerHTML = `
+            <p class="text-red-400 text-sm text-center col-span-2 py-6">
+                ${escapeHTML(error.message || "ค้นหาประวัติไม่สำเร็จ")}
+            </p>
         `;
 
-
-        card.querySelector(".cancel-booking")
-            .addEventListener("click", () => cancelBooking(booking.id));
-
-
-        resultArea.appendChild(card);
-    });
-}
-
-
-// ==========================================
-// CANCEL BOOKING
-// ==========================================
-
-function cancelBooking(bookingId) {
-
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการยกเลิกรายการจองนี้?")) {
-        return;
     }
 
-    bookings = bookings.filter(item => item.id !== bookingId);
-
-    syncStorage();
-
-    alert("ยกเลิกการจองสำเร็จแล้ว");
-
-    searchMyBookings();
-
-    renderAdminTable();
 }
 
 
 // ==========================================
-// ADMIN LOGIN
+// RENDER CUSTOMER BOOKING
 // ==========================================
 
-function unlockAdmin() {
+function renderMyBooking(booking) {
 
-    const password = document.getElementById("admin-pass").value;
+    const resultArea = document.getElementById("my-booking-results");
 
-    // รหัสผ่านนี้มีไว้ทดสอบเท่านั้น
-    if (password === "admin1234") {
+    if (!resultArea) return;
 
-        document.getElementById("admin-gate").classList.add("hidden");
+    resultArea.replaceChildren();
 
-        const adminContent = document.getElementById("admin-content");
+    const start = splitDateTime(booking.startAt);
+    const end = splitDateTime(booking.endAt);
 
-        adminContent.classList.remove("hidden");
-        adminContent.classList.add("grid");
+    const isCancelled = booking.status === "cancelled";
+
+    const card = document.createElement("div");
+
+    card.className =
+        "bg-slate-950 p-5 rounded-xl border border-slate-700 space-y-3 col-span-1 md:col-span-2";
+
+    card.innerHTML = `
+
+        <div class="flex flex-wrap justify-between items-center gap-2">
+
+            <span class="text-sm font-bold text-slate-200">
+                ${escapeHTML(booking.roomName)}
+            </span>
+
+            <span class="text-xs px-2 py-1 rounded ${
+                isCancelled
+                    ? "bg-red-950 text-red-300 border border-red-800"
+                    : "bg-emerald-950 text-emerald-300 border border-emerald-800"
+            }">
+
+                ${statusLabel(booking.status)}
+
+            </span>
+
+        </div>
+
+        <div class="text-xs text-slate-400 space-y-1">
+
+            <p>
+                Booking Code:
+                <b class="text-indigo-300">
+                    ${escapeHTML(booking.bookingCode)}
+                </b>
+            </p>
+
+            <p>
+                ผู้จอง:
+                <span class="text-slate-200">
+                    ${escapeHTML(booking.userName)}
+                </span>
+            </p>
+
+            <p>
+                เข้า:
+                ${formatThaiDate(start.date)}
+                เวลา ${escapeHTML(start.time)} น.
+            </p>
+
+            <p>
+                ออก:
+                ${formatThaiDate(end.date)}
+                เวลา ${escapeHTML(end.time)} น.
+            </p>
+
+        </div>
+
+        ${
+            isCancelled
+                ? `<p class="text-xs text-red-400">รายการนี้ถูกยกเลิกแล้ว</p>`
+                : `<p class="text-xs text-emerald-400">รายการจองได้รับการบันทึกในระบบแล้ว</p>`
+        }
+
+    `;
+
+    resultArea.appendChild(card);
+
+}
+
+
+// ==========================================
+// ADMIN: LOAD ALL BOOKINGS
+// ==========================================
+
+async function loadAdminBookings() {
+
+    try {
+
+        const data = await apiRequest(
+            "/bookings",
+            { method: "GET" },
+            true
+        );
+
+        adminBookings = Array.isArray(data.bookings)
+            ? data.bookings
+            : [];
 
         renderAdminTable();
 
-    } else {
+        return true;
 
-        alert("รหัสผ่านไม่ถูกต้อง");
+    } catch (error) {
+
+        handleAdminError(error);
+
+        return false;
 
     }
+
 }
 
 
 // ==========================================
-// ADD NEW ROOM
+// ADMIN: BOOKING SEARCH / FILTER
 // ==========================================
 
-function addNewRoom() {
+function getFilteredAdminBookings() {
 
-    const type = document.getElementById("new-room-type").value;
+    const search = (document.getElementById("admin-booking-search")?.value || "")
+        .trim()
+        .toLocaleLowerCase("th-TH");
 
-    const name = document.getElementById("new-room-name")
-        .value.trim();
+    const status = document.getElementById("admin-booking-status-filter")?.value || "all";
+    const roomType = document.getElementById("admin-booking-type-filter")?.value || "all";
+    const dateFrom = document.getElementById("admin-booking-date-from")?.value || "";
+    const dateTo = document.getElementById("admin-booking-date-to")?.value || "";
 
-    const capacity = Number.parseInt(
-        document.getElementById("new-room-cap").value,
-        10
-    );
+    return adminBookings.filter(booking => {
 
+        const searchableText = [
+            booking.bookingCode,
+            booking.roomName,
+            booking.userName,
+            booking.userEmail
+        ].join(" ").toLocaleLowerCase("th-TH");
 
-    if (!name || !Number.isInteger(capacity) || capacity < 1) {
+        if (search && !searchableText.includes(search)) {
+            return false;
+        }
 
-        alert("กรุณากรอกชื่อห้องและความจุอย่างน้อย 1 คน");
+        if (status !== "all" && booking.status !== status) {
+            return false;
+        }
 
-        return;
-    }
+        if (roomType !== "all" && booking.roomType !== roomType) {
+            return false;
+        }
 
+        const bookingStartDate = splitDateTime(booking.startAt).date;
 
-    rooms.push({
+        if (dateFrom && (!bookingStartDate || bookingStartDate < dateFrom)) {
+            return false;
+        }
 
-        id: `rm_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        if (dateTo && (!bookingStartDate || bookingStartDate > dateTo)) {
+            return false;
+        }
 
-        name: name,
-
-        capacity: capacity,
-
-        type: type
+        return true;
 
     });
 
-
-    syncStorage();
-
-    document.getElementById("new-room-name").value = "";
-
-    document.getElementById("new-room-cap").value = "";
-
-    initRoomUI();
-
-    alert(`สร้างพื้นที่ ${name} สำเร็จแล้ว`);
 }
 
 
-// ==========================================
-// ADMIN DELETE BOOKING
-// ==========================================
+function resetAdminBookingFilters() {
 
-function deleteBookingByAdmin(id) {
+    const search = document.getElementById("admin-booking-search");
+    const status = document.getElementById("admin-booking-status-filter");
+    const type = document.getElementById("admin-booking-type-filter");
+    const dateFrom = document.getElementById("admin-booking-date-from");
+    const dateTo = document.getElementById("admin-booking-date-to");
 
-    if (!confirm("ยืนยันการลบรายการจองนี้หรือไม่?")) {
-        return;
+    if (search) search.value = "";
+    if (status) status.value = "all";
+    if (type) type.value = "all";
+    if (dateFrom) {
+        dateFrom.value = "";
+        dateFrom.removeAttribute("max");
     }
-
-    bookings = bookings.filter(item => item.id !== id);
-
-    syncStorage();
-
-    renderAdminTable();
-}
-
-
-// ==========================================
-// CLEAR ALL DATA
-// ==========================================
-
-function clearAllData() {
-
-    if (!confirm("ต้องการล้างข้อมูลห้องและรายการจองทั้งหมดกลับสู่ค่าเริ่มต้นใช่หรือไม่?")) {
-        return;
+    if (dateTo) {
+        dateTo.value = "";
+        dateTo.removeAttribute("min");
     }
-
-    rooms = [...defaultRooms];
-
-    bookings = [];
-
-    syncStorage();
-
-    initRoomUI();
 
     renderAdminTable();
 
-    alert("ล้างข้อมูลเรียบร้อยแล้ว");
 }
 
 
 // ==========================================
-// INITIALIZE ROOM UI
-// ==========================================
-
-function initRoomUI() {
-
-    const select = document.getElementById("book-room");
-
-    const badgeList = document.getElementById("room-badge-list");
-
-    select.replaceChildren();
-
-    badgeList.replaceChildren();
-
-
-    rooms.forEach(room => {
-
-        const isMeeting = room.type === "meeting";
-
-
-        // เพิ่มห้องลงใน Dropdown
-        const option = document.createElement("option");
-
-        option.value = room.id;
-
-        option.textContent =
-            `[${isMeeting ? "ห้องประชุม" : "ที่พัก"}] ${room.name} (สูงสุด ${room.capacity} คน)`;
-
-        select.appendChild(option);
-
-
-        // สร้างรายการห้องทางด้านขวา
-        const badge = document.createElement("div");
-
-        badge.className =
-            `p-3 rounded-xl border ${isMeeting ? "border-indigo-500/30" : "border-emerald-500/30"} bg-slate-950 flex items-center justify-between text-sm shadow-sm`;
-
-
-        badge.innerHTML = `
-
-            <div class="flex items-center gap-2.5">
-
-                <i class="fa-solid ${isMeeting ? "fa-briefcase text-indigo-400" : "fa-bed text-emerald-400"}"></i>
-
-                <span class="font-medium text-slate-200">
-                    ${escapeHTML(room.name)}
-                </span>
-
-            </div>
-
-            <span class="text-[11px] px-2 py-0.5 rounded border ${isMeeting ? "bg-indigo-950 text-indigo-300 border-indigo-800/40" : "bg-emerald-950 text-emerald-300 border-emerald-800/40"}">
-                ${room.capacity} คน
-            </span>
-
-        `;
-
-
-        badgeList.appendChild(badge);
-
-    });
-}
-
-
-// ==========================================
-// RENDER ADMIN BOOKING TABLE
+// ADMIN: RENDER BOOKING TABLE
 // ==========================================
 
 function renderAdminTable() {
 
     const tbody = document.getElementById("admin-booking-table");
+    const count = document.getElementById("admin-booking-count");
+
+    if (!tbody) return;
 
     tbody.replaceChildren();
 
+    const filteredBookings = getFilteredAdminBookings();
 
-    if (bookings.length === 0) {
+    if (count) {
+        count.textContent = adminBookings.length === filteredBookings.length
+            ? `ทั้งหมด ${adminBookings.length.toLocaleString("th-TH")} รายการ`
+            : `แสดง ${filteredBookings.length.toLocaleString("th-TH")} จาก ${adminBookings.length.toLocaleString("th-TH")} รายการ`;
+    }
+
+    if (adminBookings.length === 0) {
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="4"
-                    class="text-center p-6 text-slate-500 text-sm">
-                    ยังไม่มีข้อมูลการจองในระบบ
+                <td colspan="4" class="text-center p-6 text-slate-500 text-sm">
+                    ยังไม่มีข้อมูลการจองในฐานข้อมูล
                 </td>
             </tr>
         `;
 
         return;
+
     }
 
+    if (filteredBookings.length === 0) {
 
-    bookings.forEach(booking => {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center p-6 text-slate-400 text-sm">
+                    ไม่พบรายการที่ตรงกับคำค้นหาหรือตัวกรอง
+                </td>
+            </tr>
+        `;
 
-        const startDate = booking.startDate || booking.date;
+        return;
 
-        const endDate = booking.endDate || booking.date;
+    }
+
+    filteredBookings.forEach(booking => {
+
+        const start = splitDateTime(booking.startAt);
+        const end = splitDateTime(booking.endAt);
 
         const isMeeting = booking.roomType === "meeting";
-
+        const isCancelled = booking.status === "cancelled";
 
         const row = document.createElement("tr");
 
         row.className =
             "hover:bg-slate-700/30 transition text-slate-300 font-mono";
 
-
         row.innerHTML = `
 
             <td class="p-3 text-sm font-sans text-slate-200">
 
-                <div class="flex items-center gap-1">
+                <div class="flex flex-col gap-1">
 
-                    <span class="text-[10px] px-1.5 py-0.5 rounded ${isMeeting ? "bg-indigo-950 text-indigo-400" : "bg-emerald-950 text-emerald-400"}">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded w-fit ${
+                        isMeeting
+                            ? "bg-indigo-950 text-indigo-400"
+                            : "bg-emerald-950 text-emerald-400"
+                    }">
+
                         ${isMeeting ? "ประชุม" : "ที่พัก"}
+
                     </span>
 
                     <span>${escapeHTML(booking.roomName)}</span>
+
+                    <span class="text-[10px] text-slate-500">
+                        ${escapeHTML(booking.bookingCode)}
+                    </span>
+
+                    <span class="text-[10px] ${
+                        isCancelled ? "text-red-400" : "text-emerald-400"
+                    }">
+
+                        ${statusLabel(booking.status)}
+
+                    </span>
 
                 </div>
 
@@ -663,16 +2068,14 @@ function renderAdminTable() {
 
                 <span class="block text-slate-400">
                     เข้า:
-                    <b class="text-slate-200">${escapeHTML(startDate)}</b>
-                    เวลา
-                    <b class="text-indigo-400">${escapeHTML(booking.startTime)} น.</b>
+                    <b class="text-slate-200">${escapeHTML(formatThaiDate(start.date))}</b>
+                    เวลา <b class="text-indigo-400">${escapeHTML(start.time)} น.</b>
                 </span>
 
                 <span class="block text-slate-400">
                     ออก:
-                    <b class="text-slate-200">${escapeHTML(endDate)}</b>
-                    เวลา
-                    <b class="text-emerald-400">${escapeHTML(booking.endTime)} น.</b>
+                    <b class="text-slate-200">${escapeHTML(formatThaiDate(end.date))}</b>
+                    เวลา <b class="text-emerald-400">${escapeHTML(end.time)} น.</b>
                 </span>
 
             </td>
@@ -684,7 +2087,7 @@ function renderAdminTable() {
                     ${escapeHTML(booking.userName)}
                 </span>
 
-                <span class="text-slate-400">
+                <span class="text-slate-400 break-all">
                     ${escapeHTML(booking.userEmail)}
                 </span>
 
@@ -693,23 +2096,265 @@ function renderAdminTable() {
 
             <td class="p-3 text-center">
 
-                <button type="button"
-                    class="delete-booking text-red-400 hover:text-red-300 text-sm p-1">
-                    ลบ
-                </button>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
+                    <button type="button"
+                        class="view-booking-detail whitespace-nowrap text-indigo-300 hover:text-indigo-200 text-xs px-2.5 py-2 border border-indigo-800/60 bg-indigo-950/40 rounded-lg transition">
+                        <i class="fa-solid fa-eye mr-1"></i>
+                        ดูรายละเอียด
+                    </button>
+
+                    ${
+                        isCancelled
+                            ? `<span class="text-[11px] text-slate-500 px-2 py-1">ยกเลิกแล้ว</span>`
+                            : `
+                                <button type="button"
+                                    class="cancel-admin-booking whitespace-nowrap text-amber-400 hover:text-amber-300 text-xs px-2.5 py-2 border border-amber-800/50 rounded-lg transition">
+                                    <i class="fa-solid fa-ban mr-1"></i>
+                                    ยกเลิกการจอง
+                                </button>
+                            `
+                    }
+                </div>
 
             </td>
 
         `;
 
+        const detailButton = row.querySelector(".view-booking-detail");
+        detailButton?.addEventListener("click", () => {
+            openBookingDetail(booking.id);
+        });
 
-        row.querySelector(".delete-booking")
-            .addEventListener("click", () => deleteBookingByAdmin(booking.id));
+        const cancelButton = row.querySelector(".cancel-admin-booking");
 
+        if (cancelButton) {
+            cancelButton.addEventListener("click", () => {
+                cancelBookingByAdmin(booking.id);
+            });
+        }
 
         tbody.appendChild(row);
 
     });
+
+}
+
+
+// ==========================================
+// ADMIN: BOOKING DETAIL MODAL
+// ==========================================
+
+function openBookingDetail(bookingId) {
+
+    const booking = adminBookings.find(item => String(item.id) === String(bookingId));
+
+    if (!booking) {
+        alert("ไม่พบข้อมูลการจองที่ต้องการดู");
+        return;
+    }
+
+    const modal = document.getElementById("booking-detail-modal");
+    const code = document.getElementById("booking-detail-code");
+    const content = document.getElementById("booking-detail-content");
+
+    if (!modal || !code || !content) return;
+
+    const start = splitDateTime(booking.startAt);
+    const end = splitDateTime(booking.endAt);
+    const isMeeting = booking.roomType === "meeting";
+    const isCancelled = booking.status === "cancelled";
+
+    code.textContent = `Booking Code: ${booking.bookingCode || "-"}`;
+
+    const details = [
+        {
+            label: "ชื่อห้อง",
+            value: booking.roomName || "-",
+            icon: "fa-door-open"
+        },
+        {
+            label: "ประเภทห้อง",
+            value: isMeeting ? "ห้องประชุม" : "ห้องพัก / ที่พัก",
+            icon: isMeeting ? "fa-briefcase" : "fa-bed"
+        },
+        {
+            label: "ชื่อผู้จอง",
+            value: booking.userName || "-",
+            icon: "fa-user"
+        },
+        {
+            label: "อีเมลผู้จอง",
+            value: booking.userEmail || "-",
+            icon: "fa-envelope"
+        },
+        {
+            label: "วันและเวลาเข้าใช้",
+            value: `${formatThaiDate(start.date)} เวลา ${start.time || "-"} น.`,
+            icon: "fa-calendar-check"
+        },
+        {
+            label: "วันและเวลาออก",
+            value: `${formatThaiDate(end.date)} เวลา ${end.time || "-"} น.`,
+            icon: "fa-calendar-xmark"
+        },
+        {
+            label: "วันที่สร้างรายการ",
+            value: formatThaiDateTime(booking.createdAt),
+            icon: "fa-clock"
+        },
+        {
+            label: "วันที่ยกเลิก",
+            value: booking.cancelledAt ? formatThaiDateTime(booking.cancelledAt) : "-",
+            icon: "fa-ban"
+        }
+    ];
+
+    content.innerHTML = details.map(detail => `
+        <div class="bg-slate-950 border border-slate-700/70 rounded-xl p-3 min-w-0">
+            <p class="text-[11px] text-slate-500 mb-1">
+                <i class="fa-solid ${detail.icon} mr-1.5 text-indigo-400"></i>
+                ${escapeHTML(detail.label)}
+            </p>
+            <p class="text-sm text-slate-100 break-words">${escapeHTML(detail.value)}</p>
+        </div>
+    `).join("");
+
+    const statusCard = document.createElement("div");
+    statusCard.className = `sm:col-span-2 rounded-xl border p-3 ${
+        isCancelled
+            ? "bg-red-950/40 border-red-800/60"
+            : "bg-emerald-950/40 border-emerald-800/60"
+    }`;
+    statusCard.innerHTML = `
+        <p class="text-[11px] text-slate-400 mb-1">สถานะการจอง</p>
+        <p class="text-sm font-bold ${isCancelled ? "text-red-300" : "text-emerald-300"}">
+            ${escapeHTML(statusLabel(booking.status))}
+        </p>
+    `;
+    content.appendChild(statusCard);
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.classList.add("overflow-hidden");
+
+    modal.querySelector('button[aria-label="ปิดรายละเอียดการจอง"]')?.focus();
+
+}
+
+
+function closeBookingDetail() {
+
+    const modal = document.getElementById("booking-detail-modal");
+
+    if (!modal) return;
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    document.body.classList.remove("overflow-hidden");
+
+}
+
+
+// ==========================================
+// ADMIN: CANCEL BOOKING
+// ==========================================
+
+async function cancelBookingByAdmin(bookingId) {
+
+    const confirmed = confirm(
+        "ยืนยันการยกเลิกรายการจองนี้หรือไม่?\n\n" +
+        "ข้อมูลจะยังถูกเก็บไว้ในประวัติ แต่สถานะจะเปลี่ยนเป็นยกเลิก"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        const data = await apiRequest(
+            `/bookings/${encodeURIComponent(bookingId)}/cancel`,
+            {
+                method: "PATCH"
+            },
+            true
+        );
+
+        alert(data.message || "ยกเลิกรายการจองสำเร็จ");
+
+        await Promise.all([
+            loadAdminBookings(),
+            loadAdminDashboard()
+        ]);
+
+    } catch (error) {
+
+        handleAdminError(error);
+
+    }
+
+}
+
+
+// ==========================================
+// ADMIN: ADD NEW ROOM
+// ==========================================
+
+async function addNewRoom() {
+
+    const type = document.getElementById("new-room-type").value;
+
+    const name = document.getElementById("new-room-name")
+        .value.trim();
+
+    const capacity = Number(
+        document.getElementById("new-room-cap").value
+    );
+
+    if (!name || name.length > 120) {
+        alert("กรุณากรอกชื่อห้องไม่เกิน 120 ตัวอักษร");
+        return;
+    }
+
+    if (
+        !Number.isInteger(capacity) ||
+        capacity < 1 ||
+        capacity > 500
+    ) {
+        alert("ความจุต้องเป็นจำนวนเต็มระหว่าง 1 ถึง 500 คน");
+        return;
+    }
+
+    try {
+
+        const data = await apiRequest(
+            "/rooms",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    name,
+                    capacity,
+                    type
+                })
+            },
+            true
+        );
+
+        alert(data.message || `เพิ่มห้อง ${name} สำเร็จ`);
+
+        document.getElementById("new-room-name").value = "";
+        document.getElementById("new-room-cap").value = "";
+
+        await Promise.all([
+            loadRooms(),
+            loadAdminRooms(),
+            loadAdminDashboard()
+        ]);
+
+    } catch (error) {
+
+        handleAdminError(error);
+
+    }
+
 }
 
 
@@ -717,7 +2362,165 @@ function renderAdminTable() {
 // START SYSTEM
 // ==========================================
 
-initRoomUI();
+async function startSystem() {
 
-renderAdminTable();
+    initRoomUI();
 
+    renderAdminTable();
+
+    renderAdminRooms();
+
+    await loadRooms();
+
+    await restoreAdminSession();
+
+}
+
+
+// ==========================================
+// ENTER KEY SUPPORT
+// ==========================================
+
+function setupSearchEnterKey() {
+
+    const emailInput = document.getElementById("search-email");
+    const codeInput = document.getElementById("search-booking-code");
+
+    [emailInput, codeInput].forEach(input => {
+
+        if (!input) return;
+
+        input.addEventListener("keydown", event => {
+
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchMyBookings();
+            }
+
+        });
+
+    });
+
+}
+
+
+// ==========================================
+// EDIT ROOM MODAL KEYBOARD SUPPORT
+// ==========================================
+
+function setupEditRoomModal() {
+
+    const modal = document.getElementById("edit-room-modal");
+
+    if (!modal) return;
+
+    modal.addEventListener("click", event => {
+
+        if (event.target === modal) {
+            closeEditRoom();
+        }
+
+    });
+
+    document.addEventListener("keydown", event => {
+
+        if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+            closeEditRoom();
+        }
+
+    });
+
+}
+
+
+// ==========================================
+// ADMIN BOOKING FILTER EVENTS
+// ==========================================
+
+function setupAdminBookingFilters() {
+
+    const search = document.getElementById("admin-booking-search");
+    const status = document.getElementById("admin-booking-status-filter");
+    const type = document.getElementById("admin-booking-type-filter");
+    const dateFrom = document.getElementById("admin-booking-date-from");
+    const dateTo = document.getElementById("admin-booking-date-to");
+    const resetButton = document.getElementById("admin-booking-reset-filters");
+
+    [search, status, type, dateFrom, dateTo].forEach(control => {
+        if (!control) return;
+        control.addEventListener(control === search ? "input" : "change", renderAdminTable);
+    });
+
+    resetButton?.addEventListener("click", resetAdminBookingFilters);
+
+    dateFrom?.addEventListener("change", () => {
+        if (dateTo && dateFrom.value) {
+            dateTo.min = dateFrom.value;
+        } else if (dateTo) {
+            dateTo.removeAttribute("min");
+        }
+    });
+
+    dateTo?.addEventListener("change", () => {
+        if (dateFrom && dateTo.value) {
+            dateFrom.max = dateTo.value;
+        } else if (dateFrom) {
+            dateFrom.removeAttribute("max");
+        }
+    });
+
+}
+
+
+// ==========================================
+// BOOKING DETAIL MODAL KEYBOARD SUPPORT
+// ==========================================
+
+function setupBookingDetailModal() {
+
+    const modal = document.getElementById("booking-detail-modal");
+
+    if (!modal) return;
+
+    modal.addEventListener("click", event => {
+        if (event.target === modal) {
+            closeBookingDetail();
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+            closeBookingDetail();
+        }
+    });
+
+}
+
+
+// ==========================================
+// ADMIN SECURITY EVENTS
+// ==========================================
+
+function setupAdminSecurityEvents() {
+
+    const passwordForm = document.getElementById("admin-password-form");
+    const backupButton = document.getElementById("create-database-backup-btn");
+
+    passwordForm?.addEventListener("submit", changeAdminPassword);
+
+    backupButton?.addEventListener("click", createDatabaseBackup);
+
+}
+
+
+// ==========================================
+// INITIALIZE
+// ==========================================
+
+setupSearchEnterKey();
+setupEditRoomModal();
+setupAdminBookingFilters();
+setupBookingDetailModal();
+setupAdminSecurityEvents();
+
+startSystem();
